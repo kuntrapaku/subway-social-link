@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Profile from "./pages/Profile";
 import Network from "./pages/Network";
 import Messages from "./pages/Messages";
+import FilmIndustry from "./pages/FilmIndustry";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/network" element={<Network />} />
           <Route path="/messages" element={<Messages />} />
+          <Route path="/film-industry" element={<FilmIndustry />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

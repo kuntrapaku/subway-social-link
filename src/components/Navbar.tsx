@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Home, Users, Bell, MessageSquare, User, Menu, Search } from "lucide-react";
+import { Home, Users, Bell, MessageSquare, User, Menu, Search, Clapperboard } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -23,7 +23,7 @@ const Navbar = () => {
               </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <Link to="/" className="inline-flex items-center px-1 pt-1 text-subway-600">
+              <Link to="/" className="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-subway-600">
                 <Home className="h-5 w-5 mr-1" />
                 <span>Home</span>
               </Link>
@@ -34,6 +34,10 @@ const Navbar = () => {
               <Link to="/messages" className="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-subway-600">
                 <MessageSquare className="h-5 w-5 mr-1" />
                 <span>Messages</span>
+              </Link>
+              <Link to="/film-industry" className="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-subway-600">
+                <Clapperboard className="h-5 w-5 mr-1" />
+                <span>Film Industry</span>
               </Link>
               <Link to="/notifications" className="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-subway-600">
                 <Bell className="h-5 w-5 mr-1" />
@@ -75,7 +79,7 @@ const Navbar = () => {
           <div className="pt-2 pb-3 space-y-1">
             <Link
               to="/"
-              className="block pl-3 pr-4 py-2 border-l-4 border-subway-500 text-subway-600 bg-subway-50 font-medium"
+              className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-subway-300 text-gray-500 hover:text-gray-700 font-medium"
             >
               Home
             </Link>
@@ -90,6 +94,12 @@ const Navbar = () => {
               className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-subway-300 text-gray-500 hover:text-gray-700 font-medium"
             >
               Messages
+            </Link>
+            <Link
+              to="/film-industry"
+              className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-subway-300 text-gray-500 hover:text-gray-700 font-medium"
+            >
+              Film Industry
             </Link>
             <Link
               to="/notifications"
