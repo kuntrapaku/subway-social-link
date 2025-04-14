@@ -17,6 +17,7 @@ import {
   Music,
   Globe
 } from "lucide-react";
+import { Button } from "@/components/ui/button"; // Add this missing import
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
