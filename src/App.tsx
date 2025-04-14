@@ -10,6 +10,7 @@ import Network from "./pages/Network";
 import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 import Notifications from "./pages/Notifications";
+import Login from "./pages/Login";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/network" element={<Network />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/login" element={<Login />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
