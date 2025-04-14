@@ -6,12 +6,42 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { AlertCircle } from 'lucide-react'
 
 const Auth = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
+
+  // Check if Supabase is properly configured
+  if (!supabase) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle className="text-red-500 flex items-center gap-2">
+            <AlertCircle size={20} />
+            Configuration Error
+          </CardTitle>
+          <CardDescription>
+            Supabase configuration is missing. Please set the required environment variables:
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-amber-50 p-4 rounded border border-amber-200 text-amber-800">
+            <p className="font-medium mb-2">Required Environment Variables:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>VITE_SUPABASE_URL</li>
+              <li>VITE_SUPABASE_ANON_KEY</li>
+            </ul>
+            <p className="mt-3 text-sm">
+              These can be found in your Supabase project dashboard under Project Settings &gt; API.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
