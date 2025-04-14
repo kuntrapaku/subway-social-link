@@ -14,32 +14,28 @@ const Navbar = () => {
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
               <Link to="/" className="flex items-center">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-subway-500 to-subway-700 flex items-center justify-center">
-                  <span className="text-white font-bold">S</span>
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-orange-500 to-red-700 flex items-center justify-center">
+                  <span className="text-white font-bold">M</span>
                 </div>
-                <span className="ml-2 text-xl font-bold bg-gradient-to-r from-subway-600 to-subway-500 text-transparent bg-clip-text">
-                  SubConnect
+                <span className="ml-2 text-xl font-bold bg-gradient-to-r from-orange-600 to-red-500 text-transparent bg-clip-text">
+                  MovConnect
                 </span>
               </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <Link to="/" className="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-subway-600">
+              <Link to="/" className="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-orange-600">
                 <Home className="h-5 w-5 mr-1" />
                 <span>Home</span>
               </Link>
-              <Link to="/network" className="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-subway-600">
+              <Link to="/network" className="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-orange-600">
                 <Users className="h-5 w-5 mr-1" />
                 <span>My Network</span>
               </Link>
-              <Link to="/messages" className="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-subway-600">
+              <Link to="/messages" className="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-orange-600">
                 <MessageSquare className="h-5 w-5 mr-1" />
                 <span>Messages</span>
               </Link>
-              <Link to="/film-industry" className="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-subway-600">
-                <Clapperboard className="h-5 w-5 mr-1" />
-                <span>Film Industry</span>
-              </Link>
-              <Link to="/notifications" className="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-subway-600">
+              <Link to="/notifications" className="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-orange-600">
                 <Bell className="h-5 w-5 mr-1" />
                 <span>Notifications</span>
               </Link>
@@ -53,12 +49,12 @@ const Navbar = () => {
               <input
                 type="text"
                 className="subway-input pl-10 w-64"
-                placeholder="Search connections, posts..."
+                placeholder="Search creators, art..."
               />
             </div>
             <Link to="/profile" className="p-1">
-              <div className="h-8 w-8 rounded-full bg-subway-200 flex items-center justify-center">
-                <User className="h-5 w-5 text-subway-600" />
+              <div className="h-8 w-8 rounded-full bg-orange-200 flex items-center justify-center">
+                <User className="h-5 w-5 text-orange-600" />
               </div>
             </Link>
           </div>
@@ -66,7 +62,7 @@ const Navbar = () => {
             <Button
               variant="ghost"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-subway-600 hover:bg-gray-100 focus:outline-none"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-orange-600 hover:bg-gray-100 focus:outline-none"
             >
               <Menu className="h-6 w-6" />
             </Button>
@@ -79,37 +75,31 @@ const Navbar = () => {
           <div className="pt-2 pb-3 space-y-1">
             <Link
               to="/"
-              className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-subway-300 text-gray-500 hover:text-gray-700 font-medium"
+              className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-orange-300 text-gray-500 hover:text-gray-700 font-medium"
             >
               Home
             </Link>
             <Link
               to="/network"
-              className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-subway-300 text-gray-500 hover:text-gray-700 font-medium"
+              className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-orange-300 text-gray-500 hover:text-gray-700 font-medium"
             >
               My Network
             </Link>
             <Link
               to="/messages"
-              className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-subway-300 text-gray-500 hover:text-gray-700 font-medium"
+              className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-orange-300 text-gray-500 hover:text-gray-700 font-medium"
             >
               Messages
             </Link>
             <Link
-              to="/film-industry"
-              className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-subway-300 text-gray-500 hover:text-gray-700 font-medium"
-            >
-              Film Industry
-            </Link>
-            <Link
               to="/notifications"
-              className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-subway-300 text-gray-500 hover:text-gray-700 font-medium"
+              className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-orange-300 text-gray-500 hover:text-gray-700 font-medium"
             >
               Notifications
             </Link>
             <Link
               to="/profile"
-              className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-subway-300 text-gray-500 hover:text-gray-700 font-medium"
+              className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-orange-300 text-gray-500 hover:text-gray-700 font-medium"
             >
               Profile
             </Link>
@@ -117,13 +107,13 @@ const Navbar = () => {
           <div className="pt-4 pb-3 border-t border-gray-200">
             <div className="flex items-center px-4">
               <div className="flex-shrink-0">
-                <div className="h-10 w-10 rounded-full bg-subway-200 flex items-center justify-center">
-                  <User className="h-6 w-6 text-subway-600" />
+                <div className="h-10 w-10 rounded-full bg-orange-200 flex items-center justify-center">
+                  <User className="h-6 w-6 text-orange-600" />
                 </div>
               </div>
               <div className="ml-3">
-                <div className="text-base font-medium text-gray-800">John Doe</div>
-                <div className="text-sm font-medium text-gray-500">johndoe@example.com</div>
+                <div className="text-base font-medium text-gray-800">Surendra Kuntrapaku</div>
+                <div className="text-sm font-medium text-gray-500">surendra@24frames.in</div>
               </div>
             </div>
           </div>

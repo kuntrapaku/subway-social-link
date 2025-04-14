@@ -14,8 +14,8 @@ const NewPost = () => {
     
     if (!content.trim()) {
       toast({
-        title: "Empty post",
-        description: "Please add some content to your post.",
+        title: "Empty art post",
+        description: "Please add some description to your art.",
         variant: "destructive",
       });
       return;
@@ -23,8 +23,8 @@ const NewPost = () => {
     
     // In a real app, this would send the post to a backend
     toast({
-      title: "Post created!",
-      description: "Your post has been shared with your network.",
+      title: "Art shared!",
+      description: "Your artwork has been shared with your network.",
     });
     
     // Reset form
@@ -36,14 +36,14 @@ const NewPost = () => {
     <div className="subway-card mb-4">
       <form onSubmit={handleSubmit}>
         <div className="flex">
-          <div className="h-10 w-10 rounded-full bg-subway-100 flex items-center justify-center mr-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-subway-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center mr-3">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </div>
           <textarea
-            className="flex-1 p-2 subway-input resize-none"
-            placeholder="What's on your mind?"
+            className="flex-1 p-2 border border-orange-200 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+            placeholder="Show your art..."
             rows={3}
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -54,7 +54,7 @@ const NewPost = () => {
           <div className="mt-3 relative">
             <img 
               src={URL.createObjectURL(image)} 
-              alt="Post preview" 
+              alt="Art preview" 
               className="w-full h-auto rounded-lg object-cover max-h-60" 
             />
             <Button 
@@ -81,26 +81,26 @@ const NewPost = () => {
                   }
                 }}
               />
-              <div className="flex items-center text-gray-500 hover:text-subway-600 p-2 rounded-md hover:bg-gray-100">
+              <div className="flex items-center text-gray-500 hover:text-orange-600 p-2 rounded-md hover:bg-gray-100">
                 <Image className="h-5 w-5 mr-1" />
                 <span className="text-sm">Photo</span>
               </div>
             </label>
-            <div className="flex items-center text-gray-500 hover:text-subway-600 p-2 rounded-md hover:bg-gray-100 cursor-pointer">
+            <div className="flex items-center text-gray-500 hover:text-orange-600 p-2 rounded-md hover:bg-gray-100 cursor-pointer">
               <Video className="h-5 w-5 mr-1" />
-              <span className="text-sm">Video</span>
+              <span className="text-sm">Frames</span>
             </div>
-            <div className="flex items-center text-gray-500 hover:text-subway-600 p-2 rounded-md hover:bg-gray-100 cursor-pointer">
+            <div className="flex items-center text-gray-500 hover:text-orange-600 p-2 rounded-md hover:bg-gray-100 cursor-pointer">
               <Calendar className="h-5 w-5 mr-1" />
               <span className="text-sm">Event</span>
             </div>
           </div>
           <Button 
             type="submit"
-            className="subway-button"
+            className="bg-orange-600 text-white hover:bg-orange-700 transition-colors"
             disabled={!content.trim() && !image}
           >
-            Post
+            Share Art
           </Button>
         </div>
       </form>

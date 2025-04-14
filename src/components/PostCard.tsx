@@ -33,11 +33,11 @@ const PostCard = ({ post }: PostCardProps) => {
   };
 
   return (
-    <div className="subway-card mb-4 animate-fade-in">
+    <div className="bg-white rounded-lg shadow-md border border-orange-100 p-4 mb-4 animate-fade-in">
       <div className="flex justify-between">
         <div className="flex">
-          <div className="h-10 w-10 rounded-full bg-subway-100 flex items-center justify-center mr-3">
-            <User className="h-6 w-6 text-subway-600" />
+          <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center mr-3">
+            <User className="h-6 w-6 text-orange-600" />
           </div>
           <div>
             <h3 className="font-medium">{post.author.name}</h3>
@@ -56,7 +56,7 @@ const PostCard = ({ post }: PostCardProps) => {
           <div className="mt-3">
             <img 
               src={post.imageUrl} 
-              alt="Post" 
+              alt="Art" 
               className="w-full h-auto rounded-lg object-cover max-h-96" 
             />
           </div>
@@ -68,21 +68,21 @@ const PostCard = ({ post }: PostCardProps) => {
           <Button 
             variant="ghost" 
             onClick={handleLike}
-            className={`text-sm flex items-center ${isLiked ? 'text-subway-600' : 'text-gray-500'} hover:text-subway-600`}
+            className={`text-sm flex items-center ${isLiked ? 'text-red-500' : 'text-gray-500'} hover:text-red-600`}
           >
-            <Heart className={`h-4 w-4 mr-1 ${isLiked ? 'fill-subway-600' : ''}`} />
+            <Heart className={`h-4 w-4 mr-1 ${isLiked ? 'fill-red-500' : ''}`} />
             <span>{likeCount}</span>
           </Button>
           <Button 
             variant="ghost" 
-            className="text-sm flex items-center text-gray-500 hover:text-subway-600"
+            className="text-sm flex items-center text-gray-500 hover:text-orange-600"
           >
             <MessageCircle className="h-4 w-4 mr-1" />
             <span>{post.comments}</span>
           </Button>
           <Button 
             variant="ghost" 
-            className="text-sm flex items-center text-gray-500 hover:text-subway-600"
+            className="text-sm flex items-center text-gray-500 hover:text-orange-600"
           >
             <Share2 className="h-4 w-4 mr-1" />
             <span>Share</span>

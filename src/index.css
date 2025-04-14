@@ -5,35 +5,46 @@
 
 @layer base {
   :root {
-    --background: 144 44% 96%;
-    --foreground: 144 10% 10%;
+    --background: 30 30% 96%;
+    --foreground: 20 10% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 144 10% 10%;
+    --card-foreground: 20 10% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 144 10% 10%;
+    --popover-foreground: 20 10% 10%;
 
-    --primary: 144 100% 35%;
-    --primary-foreground: 144 10% 98%;
+    --primary: 20 100% 50%;
+    --primary-foreground: 60 10% 98%;
 
-    --secondary: 144 30% 96%;
-    --secondary-foreground: 144 60% 20%;
+    --secondary: 20 30% 96%;
+    --secondary-foreground: 24 60% 20%;
 
-    --muted: 144 20% 96%;
-    --muted-foreground: 144 10% 40%;
+    --muted: 20 20% 96%;
+    --muted-foreground: 20 10% 40%;
 
-    --accent: 75 100% 60%;
-    --accent-foreground: 144 80% 10%;
+    --accent: 40 100% 60%;
+    --accent-foreground: 20 80% 10%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 144 30% 85%;
-    --input: 144 30% 85%;
-    --ring: 144 100% 35%;
+    --border: 20 30% 85%;
+    --input: 20 30% 85%;
+    --ring: 20 100% 50%;
 
     --radius: 0.5rem;
+    
+    --subway-50: #fff7ed;
+    --subway-100: #ffedd5;
+    --subway-200: #fed7aa;
+    --subway-300: #fdba74;
+    --subway-400: #fb923c;
+    --subway-500: #f97316;
+    --subway-600: #ea580c;
+    --subway-700: #c2410c;
+    --subway-800: #9a3412;
+    --subway-900: #7c2d12;
   }
 }
 
@@ -53,14 +64,14 @@
   }
   
   .subway-button {
-    @apply bg-subway-600 text-white hover:bg-subway-700 transition-colors px-4 py-2 rounded-md;
+    @apply bg-orange-600 text-white hover:bg-orange-700 transition-colors px-4 py-2 rounded-md;
   }
   
   .subway-button-outline {
-    @apply border border-subway-600 text-subway-600 hover:bg-subway-50 transition-colors px-4 py-2 rounded-md;
+    @apply border border-orange-600 text-orange-600 hover:bg-orange-50 transition-colors px-4 py-2 rounded-md;
   }
   
   .subway-input {
-    @apply border border-subway-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-subway-500;
+    @apply border border-orange-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500;
   }
 }
