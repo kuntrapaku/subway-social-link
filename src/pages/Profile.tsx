@@ -1,46 +1,25 @@
-
 import Navbar from "@/components/Navbar";
 import ProfileCard from "@/components/ProfileCard";
 import PostCard from "@/components/PostCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Image, Video, Newspaper, Calendar } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Post } from "@/components/NewPost";
+import { getPosts } from "@/utils/postsStorage";
 
 const Profile = () => {
-  // Sample data
-  const posts = [
-    {
-      id: "1",
-      author: {
-        name: "John Doe",
-        title: "Software Engineer"
-      },
-      timeAgo: "1 week ago",
-      content: "Just completed a new project using React and Tailwind CSS. The combination of these technologies made development so efficient!",
-      imageUrl: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-      likes: 78,
-      comments: 12,
-      isLiked: false
-    },
-    {
-      id: "2",
-      author: {
-        name: "John Doe",
-        title: "Software Engineer"
-      },
-      timeAgo: "2 weeks ago",
-      content: "Excited to announce I've been promoted to Senior Software Engineer! Looking forward to new challenges and opportunities to grow.",
-      likes: 156,
-      comments: 34,
-      isLiked: true
-    }
-  ];
+  const [posts, setPosts] = useState<Post[]>([]);
+
+  useEffect(() => {
+    const storedPosts = getPosts();
+    setPosts(storedPosts);
+  }, []);
 
   return (
     <div className="bg-gray-50 min-h-screen">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Profile info */}
           <div className="lg:col-span-1">
             <div className="sticky top-20">
               <ProfileCard isCurrentUser={true} />
@@ -65,7 +44,6 @@ const Profile = () => {
             </div>
           </div>
           
-          {/* Tab content */}
           <div className="lg:col-span-2">
             <div className="subway-card mb-4">
               <Tabs defaultValue="posts">
@@ -92,9 +70,17 @@ const Profile = () => {
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="posts" className="mt-0">
-                  {posts.map((post) => (
-                    <PostCard key={post.id} post={post} />
-                  ))}
+                  {posts.length > 0 ? (
+                    posts.map((post) => (
+                      <PostCard key={post.id} post={post} />
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Newspaper className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                      <p>No posts to display yet</p>
+                      <p className="text-sm mt-2">Share your first art to see it here!</p>
+                    </div>
+                  )}
                 </TabsContent>
                 <TabsContent value="photos" className="mt-0">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
