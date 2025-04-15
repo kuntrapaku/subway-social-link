@@ -1,3 +1,4 @@
+
 import Navbar from "@/components/Navbar";
 import ProfileCard from "@/components/ProfileCard";
 import PostCard from "@/components/PostCard";
@@ -9,10 +10,25 @@ import { getPosts } from "@/utils/postsStorage";
 
 const Profile = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [activeTab, setActiveTab] = useState("posts");
 
   useEffect(() => {
+    // Load posts from localStorage when component mounts
     const storedPosts = getPosts();
     setPosts(storedPosts);
+    
+    // Add event listener to refresh posts when localStorage changes
+    const handleStorageChange = () => {
+      const updatedPosts = getPosts();
+      setPosts(updatedPosts);
+    };
+    
+    window.addEventListener("storage", handleStorageChange);
+    
+    // Clean up event listener when component unmounts
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
   return (
@@ -46,7 +62,7 @@ const Profile = () => {
           
           <div className="lg:col-span-2">
             <div className="subway-card mb-4">
-              <Tabs defaultValue="posts">
+              <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid grid-cols-5 mb-4">
                   <TabsTrigger value="posts" className="data-[state=active]:text-subway-600 data-[state=active]:border-b-2 data-[state=active]:border-subway-600">
                     <Newspaper className="h-4 w-4 mr-1" />
@@ -84,11 +100,23 @@ const Profile = () => {
                 </TabsContent>
                 <TabsContent value="photos" className="mt-0">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {[1,2,3,4,5,6].map((item) => (
-                      <div key={item} className="aspect-square bg-subway-100 rounded-lg flex items-center justify-center">
-                        <Image className="h-8 w-8 text-subway-600" />
-                      </div>
-                    ))}
+                    {posts.filter(post => post.imageUrl).length > 0 ? (
+                      posts.filter(post => post.imageUrl).map((post) => (
+                        <div key={post.id} className="aspect-square bg-subway-100 rounded-lg overflow-hidden">
+                          <img 
+                            src={post.imageUrl} 
+                            alt="Art" 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))
+                    ) : (
+                      [1,2,3,4,5,6].map((item) => (
+                        <div key={item} className="aspect-square bg-subway-100 rounded-lg flex items-center justify-center">
+                          <Image className="h-8 w-8 text-subway-600" />
+                        </div>
+                      ))
+                    )}
                   </div>
                 </TabsContent>
                 <TabsContent value="videos" className="mt-0">

@@ -1,8 +1,8 @@
-
 import { useState } from "react";
 import { Heart, MessageCircle, Share2, MoreHorizontal, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { togglePostLike, addCommentToPost } from "@/utils/postsStorage";
 
 interface PostCardProps {
   post: {
@@ -29,6 +29,8 @@ const PostCard = ({ post }: PostCardProps) => {
   const { toast } = useToast();
 
   const handleLike = () => {
+    togglePostLike(post.id);
+    
     if (isLiked) {
       setLikeCount(likeCount - 1);
     } else {
@@ -48,6 +50,8 @@ const PostCard = ({ post }: PostCardProps) => {
 
   const handleAddComment = () => {
     if (commentText.trim()) {
+      addCommentToPost(post.id);
+      
       setCommentCount(commentCount + 1);
       
       toast({
@@ -61,7 +65,6 @@ const PostCard = ({ post }: PostCardProps) => {
   };
 
   const handleShare = () => {
-    // In a real app, this would open a share dialog
     toast({
       title: "Share post",
       description: "Sharing options would appear here in a production app",

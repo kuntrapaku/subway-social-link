@@ -36,3 +36,46 @@ export const addPost = (post: Post): Post[] => {
     return [post];
   }
 };
+
+// Toggle like status for a post
+export const togglePostLike = (postId: string): Post[] => {
+  try {
+    const currentPosts = getPosts();
+    const updatedPosts = currentPosts.map(post => {
+      if (post.id === postId) {
+        return {
+          ...post,
+          isLiked: !post.isLiked,
+          likes: post.isLiked ? post.likes - 1 : post.likes + 1
+        };
+      }
+      return post;
+    });
+    savePosts(updatedPosts);
+    return updatedPosts;
+  } catch (error) {
+    console.error("Error toggling post like in localStorage:", error);
+    return getPosts();
+  }
+};
+
+// Add a comment to a post
+export const addCommentToPost = (postId: string): Post[] => {
+  try {
+    const currentPosts = getPosts();
+    const updatedPosts = currentPosts.map(post => {
+      if (post.id === postId) {
+        return {
+          ...post,
+          comments: post.comments + 1
+        };
+      }
+      return post;
+    });
+    savePosts(updatedPosts);
+    return updatedPosts;
+  } catch (error) {
+    console.error("Error adding comment to post in localStorage:", error);
+    return getPosts();
+  }
+};

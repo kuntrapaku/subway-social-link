@@ -5,7 +5,7 @@ import { Post } from "@/components/NewPost";
 import LeftSidebar from "@/components/index/LeftSidebar";
 import PostsSection from "@/components/index/PostsSection";
 import RightSidebar from "@/components/index/RightSidebar";
-import { getPosts, addPost } from "@/utils/postsStorage";
+import { getPosts, addPost, savePosts } from "@/utils/postsStorage";
 
 const Index = () => {
   const [activeCategory, setActiveCategory] = useState("all");
@@ -72,6 +72,7 @@ const Index = () => {
         }
       ];
       setPosts(samplePosts);
+      savePosts(samplePosts); // Save sample posts to localStorage
     }
   }, []);
 
