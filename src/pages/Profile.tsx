@@ -1,4 +1,3 @@
-
 import Navbar from "@/components/Navbar";
 import ProfileCard from "@/components/ProfileCard";
 import PostCard from "@/components/PostCard";
@@ -19,13 +18,11 @@ const Profile = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Load posts and frames from localStorage when component mounts
     const storedPosts = getPosts();
     const storedFrames = getFrames();
     setPosts(storedPosts);
     setFrames(storedFrames);
     
-    // Add event listeners to refresh posts and frames when localStorage changes
     const handleStorageChange = () => {
       const updatedPosts = getPosts();
       setPosts(updatedPosts);
@@ -40,7 +37,6 @@ const Profile = () => {
     window.addEventListener("frames-updated", handleFramesUpdate);
     window.addEventListener("profile-updated", handleStorageChange);
     
-    // Clean up event listeners when component unmounts
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("frames-updated", handleFramesUpdate);
@@ -150,16 +146,9 @@ const Profile = () => {
                   <NewFrame onFrameCreated={handleNewFrame} />
                   
                   {frames.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                       {frames.map((frame) => (
-                        <div key={frame.id} className="aspect-video bg-subway-100 rounded-lg relative overflow-hidden">
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Play className="h-10 w-10 text-subway-600" />
-                          </div>
-                          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white p-2">
-                            <p className="text-sm truncate">{frame.content.substring(0, 30)}{frame.content.length > 30 ? '...' : ''}</p>
-                          </div>
-                        </div>
+                        <FrameCard key={frame.id} frame={frame} />
                       ))}
                     </div>
                   ) : (
