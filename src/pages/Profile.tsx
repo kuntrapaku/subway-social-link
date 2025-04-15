@@ -1,3 +1,4 @@
+
 import Navbar from "@/components/Navbar";
 import ProfileCard from "@/components/ProfileCard";
 import PostCard from "@/components/PostCard";
@@ -10,11 +11,15 @@ import { getPosts, getFrames } from "@/utils/postsStorage";
 import NewFrame from "@/components/NewFrame";
 import { useToast } from "@/hooks/use-toast";
 import { addFrame } from "@/utils/postsStorage";
+import { useLocation } from "react-router-dom";
 
 const Profile = () => {
+  const location = useLocation();
+  const initialTab = location.state?.activeTab || "posts";
+  
   const [posts, setPosts] = useState<Post[]>([]);
   const [frames, setFrames] = useState<Post[]>([]);
-  const [activeTab, setActiveTab] = useState("posts");
+  const [activeTab, setActiveTab] = useState(initialTab);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -43,6 +48,13 @@ const Profile = () => {
       window.removeEventListener("profile-updated", handleStorageChange);
     };
   }, []);
+
+  useEffect(() => {
+    // Handle tab changes from navigation state
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+    }
+  }, [location.state]);
 
   const handleNewFrame = (frame: Post) => {
     const updatedFrames = addFrame(frame);

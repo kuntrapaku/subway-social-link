@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Heart, MessageCircle, Share2, MoreHorizontal, User, Play } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, User, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { toggleFrameLike, addCommentToFrame } from "@/utils/postsStorage";
@@ -28,6 +28,7 @@ const FrameCard = ({ frame }: FrameCardProps) => {
   const [commentCount, setCommentCount] = useState(frame.comments);
   const [commentText, setCommentText] = useState("");
   const [showCommentInput, setShowCommentInput] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const { toast } = useToast();
 
   const handleLike = () => {
@@ -73,6 +74,27 @@ const FrameCard = ({ frame }: FrameCardProps) => {
     });
   };
 
+  const togglePlayback = () => {
+    setIsPlaying(!isPlaying);
+    
+    // Get video element
+    const videoEl = document.getElementById(`video-${frame.id}`) as HTMLVideoElement;
+    if (videoEl) {
+      if (isPlaying) {
+        videoEl.pause();
+      } else {
+        videoEl.play().catch(error => {
+          console.error("Error playing video:", error);
+          toast({
+            title: "Video playback error",
+            description: "There was an issue playing this video.",
+            variant: "destructive"
+          });
+        });
+      }
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md border border-orange-100 p-4 mb-4 animate-fade-in">
       <div className="flex justify-between">
@@ -97,12 +119,22 @@ const FrameCard = ({ frame }: FrameCardProps) => {
           <div className="mt-3 relative">
             <div className="relative rounded-lg overflow-hidden bg-gray-100">
               <div className="aspect-video bg-gray-100 flex items-center justify-center">
-                <Play className="h-12 w-12 text-orange-600" />
-                <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
-                  <div className="bg-white bg-opacity-90 rounded-full p-4">
-                    <Play className="h-8 w-8 text-orange-600" />
+                {isPlaying ? (
+                  <video 
+                    id={`video-${frame.id}`}
+                    src={frame.imageUrl} 
+                    className="w-full h-full object-contain" 
+                    controls
+                    autoPlay
+                    onEnded={() => setIsPlaying(false)}
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center cursor-pointer" onClick={togglePlayback}>
+                    <div className="bg-white bg-opacity-90 rounded-full p-4">
+                      <Play className="h-8 w-8 text-orange-600" />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>

@@ -1,7 +1,9 @@
+
 import { useState } from "react";
 import { Image, Users, Calendar, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 // Define the Post type to match what's used in the Index page
 export interface Post {
@@ -27,6 +29,7 @@ const NewPost = ({ onPostCreated }: NewPostProps = {}) => {
   const [content, setContent] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,6 +73,10 @@ const NewPost = ({ onPostCreated }: NewPostProps = {}) => {
     // Reset form
     setContent("");
     setImage(null);
+  };
+
+  const handleFramesClick = () => {
+    navigate("/profile", { state: { activeTab: "videos" } });
   };
 
   return (
@@ -126,7 +133,10 @@ const NewPost = ({ onPostCreated }: NewPostProps = {}) => {
                 <span className="text-sm">Photo</span>
               </div>
             </label>
-            <div className="flex items-center text-gray-500 hover:text-orange-600 p-2 rounded-md hover:bg-gray-100 cursor-pointer">
+            <div 
+              className="flex items-center text-gray-500 hover:text-orange-600 p-2 rounded-md hover:bg-gray-100 cursor-pointer"
+              onClick={handleFramesClick}
+            >
               <Video className="h-5 w-5 mr-1" />
               <span className="text-sm">Frames</span>
             </div>
