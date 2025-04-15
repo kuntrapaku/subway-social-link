@@ -2,32 +2,45 @@
 import Navbar from "@/components/Navbar";
 import ProfileCard from "@/components/ProfileCard";
 import PostCard from "@/components/PostCard";
+import FrameCard from "@/components/FrameCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Image, Video, Newspaper, Calendar } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Post } from "@/components/NewPost";
-import { getPosts } from "@/utils/postsStorage";
+import { getPosts, getFrames } from "@/utils/postsStorage";
 
 const Profile = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [frames, setFrames] = useState<Post[]>([]);
   const [activeTab, setActiveTab] = useState("posts");
 
   useEffect(() => {
-    // Load posts from localStorage when component mounts
+    // Load posts and frames from localStorage when component mounts
     const storedPosts = getPosts();
+    const storedFrames = getFrames();
     setPosts(storedPosts);
+    setFrames(storedFrames);
     
-    // Add event listener to refresh posts when localStorage changes
+    // Add event listeners to refresh posts and frames when localStorage changes
     const handleStorageChange = () => {
       const updatedPosts = getPosts();
       setPosts(updatedPosts);
     };
     
-    window.addEventListener("storage", handleStorageChange);
+    const handleFramesUpdate = () => {
+      const updatedFrames = getFrames();
+      setFrames(updatedFrames);
+    };
     
-    // Clean up event listener when component unmounts
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("frames-updated", handleFramesUpdate);
+    window.addEventListener("profile-updated", handleStorageChange);
+    
+    // Clean up event listeners when component unmounts
     return () => {
       window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("frames-updated", handleFramesUpdate);
+      window.removeEventListener("profile-updated", handleStorageChange);
     };
   }, []);
 
@@ -100,8 +113,8 @@ const Profile = () => {
                 </TabsContent>
                 <TabsContent value="photos" className="mt-0">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {posts.filter(post => post.imageUrl).length > 0 ? (
-                      posts.filter(post => post.imageUrl).map((post) => (
+                    {posts.filter(post => post.imageUrl && !post.isVideo).length > 0 ? (
+                      posts.filter(post => post.imageUrl && !post.isVideo).map((post) => (
                         <div key={post.id} className="aspect-square bg-subway-100 rounded-lg overflow-hidden">
                           <img 
                             src={post.imageUrl} 
@@ -120,10 +133,26 @@ const Profile = () => {
                   </div>
                 </TabsContent>
                 <TabsContent value="videos" className="mt-0">
-                  <div className="text-center py-8 text-gray-500">
-                    <Video className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                    <p>No videos to display</p>
-                  </div>
+                  {frames.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {frames.map((frame) => (
+                        <div key={frame.id} className="aspect-video bg-subway-100 rounded-lg relative overflow-hidden">
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Play className="h-10 w-10 text-subway-600" />
+                          </div>
+                          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white p-2">
+                            <p className="text-sm truncate">{frame.content.substring(0, 30)}{frame.content.length > 30 ? '...' : ''}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Video className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                      <p>No videos to display</p>
+                      <p className="text-sm mt-2">Share your first frame to see it here!</p>
+                    </div>
+                  )}
                 </TabsContent>
                 <TabsContent value="events" className="mt-0">
                   <div className="text-center py-8 text-gray-500">

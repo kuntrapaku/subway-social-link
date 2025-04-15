@@ -5,15 +5,18 @@ import { Post } from "@/components/NewPost";
 import LeftSidebar from "@/components/index/LeftSidebar";
 import PostsSection from "@/components/index/PostsSection";
 import RightSidebar from "@/components/index/RightSidebar";
-import { getPosts, addPost, savePosts } from "@/utils/postsStorage";
+import { getPosts, addPost, savePosts, getFrames, addFrame, saveFrames } from "@/utils/postsStorage";
 
 const Index = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const [posts, setPosts] = useState<Post[]>([]);
+  const [frames, setFrames] = useState<Post[]>([]);
   
-  // Load posts from localStorage on component mount
+  // Load posts and frames from localStorage on component mount
   useEffect(() => {
     const storedPosts = getPosts();
+    const storedFrames = getFrames();
+    
     if (storedPosts.length > 0) {
       setPosts(storedPosts);
     } else {
@@ -74,12 +77,56 @@ const Index = () => {
       setPosts(samplePosts);
       savePosts(samplePosts); // Save sample posts to localStorage
     }
+    
+    if (storedFrames.length > 0) {
+      setFrames(storedFrames);
+    } else {
+      // Set initial sample frames if no frames in storage
+      const sampleFrames = [
+        {
+          id: "100",
+          author: {
+            name: "Vikram Bhatt",
+            title: "Director at Vishesh Films"
+          },
+          timeAgo: "1 day ago",
+          content: "Behind-the-scenes from our latest horror film. The lighting crew did an amazing job with this shot!",
+          imageUrl: "https://images.unsplash.com/photo-1536240478700-b869070f9279?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80",
+          likes: 56,
+          comments: 8,
+          isLiked: false,
+          isVideo: true
+        },
+        {
+          id: "101",
+          author: {
+            name: "Anurag Kashyap",
+            title: "Film Director"
+          },
+          timeAgo: "3 days ago",
+          content: "Working with natural light in the streets of Mumbai gives such an authentic feel to our independent cinema.",
+          imageUrl: "https://images.unsplash.com/photo-1585951237318-9ea5e175b891?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80",
+          likes: 124,
+          comments: 15,
+          isLiked: true,
+          isVideo: true
+        }
+      ];
+      setFrames(sampleFrames);
+      saveFrames(sampleFrames); // Save sample frames to localStorage
+    }
   }, []);
 
   const handleNewPost = (newPost: Post) => {
     // Add post to localStorage and update state
     const updatedPosts = addPost(newPost);
     setPosts(updatedPosts);
+  };
+  
+  const handleNewFrame = (newFrame: Post) => {
+    // Add frame to localStorage and update state
+    const updatedFrames = addFrame(newFrame);
+    setFrames(updatedFrames);
   };
 
   return (
@@ -95,7 +142,8 @@ const Index = () => {
             <div className="md:col-span-2 lg:col-span-1">
               <PostsSection 
                 posts={posts} 
-                onNewPost={handleNewPost} 
+                onNewPost={handleNewPost}
+                onNewFrame={handleNewFrame}
                 activeCategory={activeCategory}
                 setActiveCategory={setActiveCategory}
               />
