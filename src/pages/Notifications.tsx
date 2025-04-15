@@ -1,9 +1,11 @@
 
 import React, { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { Bell, Heart, Users, MessageSquare, Star, Clock, CheckCheck, Filter } from "lucide-react";
+import { Bell, Heart, Users, MessageSquare, Star, Clock, CheckCheck, Filter, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 
 interface NotificationProps {
   id: string;
@@ -12,9 +14,12 @@ interface NotificationProps {
   user: string;
   time: string;
   read: boolean;
+  postId?: string; // ID of the related post if applicable
 }
 
 const Notifications = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [notifications, setNotifications] = useState<NotificationProps[]>([
     {
       id: "1",
@@ -22,7 +27,8 @@ const Notifications = () => {
       content: "liked your artwork 'Mumbai Sunset Scene'",
       user: "Vikram Patel",
       time: "2 hours ago",
-      read: false
+      read: false,
+      postId: "1"
     },
     {
       id: "2",
@@ -30,7 +36,8 @@ const Notifications = () => {
       content: "commented on your post: 'This is amazing work! The lighting is perfect.'",
       user: "Priya Sharma",
       time: "5 hours ago",
-      read: false
+      read: false,
+      postId: "1"
     },
     {
       id: "3",
@@ -46,7 +53,8 @@ const Notifications = () => {
       content: "mentioned you in a comment: '@SurendraK check out this new camera setup!'",
       user: "Rahul Singh",
       time: "2 days ago",
-      read: true
+      read: true,
+      postId: "3"
     },
     {
       id: "5",
@@ -54,7 +62,8 @@ const Notifications = () => {
       content: "liked your post about the new RED camera",
       user: "Deepika Reddy",
       time: "3 days ago",
-      read: true
+      read: true,
+      postId: "2"
     },
     {
       id: "6",
@@ -62,7 +71,8 @@ const Notifications = () => {
       content: "commented on your art: 'This frame composition is breathtaking!'",
       user: "Amit Kumar",
       time: "3 days ago",
-      read: true
+      read: true,
+      postId: "2"
     },
     {
       id: "7",
@@ -76,6 +86,36 @@ const Notifications = () => {
 
   const markAllAsRead = () => {
     setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
+    toast({
+      title: "All notifications marked as read",
+      description: "You have no unread notifications",
+    });
+  };
+
+  const markAsRead = (id: string) => {
+    setNotifications(prev => 
+      prev.map(notif => notif.id === id ? { ...notif, read: true } : notif)
+    );
+  };
+
+  const handleNotificationClick = (notification: NotificationProps) => {
+    // Mark the notification as read
+    markAsRead(notification.id);
+    
+    // Navigate to the appropriate location based on notification type
+    if (notification.type === "connection") {
+      navigate("/network");
+      toast({
+        title: "Network Connection",
+        description: `Viewing your connection with ${notification.user}`,
+      });
+    } else if (notification.postId) {
+      navigate(`/?postId=${notification.postId}`);
+      toast({
+        title: "Post View",
+        description: `Viewing post related to ${notification.user}'s activity`,
+      });
+    }
   };
 
   const getNotificationIcon = (type: string) => {
@@ -137,7 +177,8 @@ const Notifications = () => {
               {notifications.map((notification) => (
                 <div 
                   key={notification.id} 
-                  className={`p-4 rounded-lg border ${notification.read ? 'bg-white border-gray-200' : 'bg-orange-50 border-orange-200'} transition-colors duration-200`}
+                  className={`p-4 rounded-lg border ${notification.read ? 'bg-white border-gray-200' : 'bg-orange-50 border-orange-200'} transition-colors duration-200 hover:bg-orange-100 cursor-pointer`}
+                  onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex">
                     <div className="mr-4 mt-1">
@@ -152,6 +193,12 @@ const Notifications = () => {
                         </div>
                       </div>
                       <p className="text-gray-600">{notification.content}</p>
+                      {(notification.postId || notification.type === "connection") && (
+                        <div className="mt-1 text-orange-600 text-sm flex items-center">
+                          <span>View {notification.type === "connection" ? "connection" : "post"}</span>
+                          <ArrowRight className="h-3 w-3 ml-1" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -170,7 +217,8 @@ const Notifications = () => {
                   .map((notification) => (
                     <div 
                       key={notification.id} 
-                      className="p-4 rounded-lg border bg-orange-50 border-orange-200"
+                      className="p-4 rounded-lg border bg-orange-50 border-orange-200 hover:bg-orange-100 cursor-pointer"
+                      onClick={() => handleNotificationClick(notification)}
                     >
                       <div className="flex">
                         <div className="mr-4 mt-1">
@@ -185,6 +233,12 @@ const Notifications = () => {
                             </div>
                           </div>
                           <p className="text-gray-600">{notification.content}</p>
+                          {(notification.postId || notification.type === "connection") && (
+                            <div className="mt-1 text-orange-600 text-sm flex items-center">
+                              <span>View {notification.type === "connection" ? "connection" : "post"}</span>
+                              <ArrowRight className="h-3 w-3 ml-1" />
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -204,7 +258,8 @@ const Notifications = () => {
                   .map((notification) => (
                     <div 
                       key={notification.id} 
-                      className={`p-4 rounded-lg border ${notification.read ? 'bg-white border-gray-200' : 'bg-orange-50 border-orange-200'}`}
+                      className={`p-4 rounded-lg border ${notification.read ? 'bg-white border-gray-200' : 'bg-orange-50 border-orange-200'} hover:bg-orange-100 cursor-pointer`}
+                      onClick={() => handleNotificationClick(notification)}
                     >
                       <div className="flex">
                         <div className="mr-4 mt-1">
@@ -219,6 +274,12 @@ const Notifications = () => {
                             </div>
                           </div>
                           <p className="text-gray-600">{notification.content}</p>
+                          {notification.postId && (
+                            <div className="mt-1 text-orange-600 text-sm flex items-center">
+                              <span>View post</span>
+                              <ArrowRight className="h-3 w-3 ml-1" />
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
