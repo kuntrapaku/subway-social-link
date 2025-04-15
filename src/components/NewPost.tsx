@@ -4,7 +4,26 @@ import { Image, Users, Calendar, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-const NewPost = () => {
+// Define the Post type to match what's used in the Index page
+export interface Post {
+  id: string;
+  author: {
+    name: string;
+    title: string;
+  };
+  timeAgo: string;
+  content: string;
+  imageUrl?: string;
+  likes: number;
+  comments: number;
+  isLiked?: boolean;
+}
+
+interface NewPostProps {
+  onPostCreated?: (post: Post) => void;
+}
+
+const NewPost = ({ onPostCreated }: NewPostProps = {}) => {
   const [content, setContent] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const { toast } = useToast();
@@ -21,7 +40,27 @@ const NewPost = () => {
       return;
     }
     
-    // In a real app, this would send the post to a backend
+    // Create a new post object
+    const newPost: Post = {
+      id: Date.now().toString(), // Generate a unique ID based on timestamp
+      author: {
+        name: "You", // In a real app, this would come from authenticated user
+        title: "Artist"
+      },
+      timeAgo: "Just now",
+      content: content,
+      imageUrl: image ? URL.createObjectURL(image) : undefined,
+      likes: 0,
+      comments: 0,
+      isLiked: false
+    };
+    
+    // Call the callback to add the post to the timeline
+    if (onPostCreated) {
+      onPostCreated(newPost);
+    }
+    
+    // Show success toast
     toast({
       title: "Art shared!",
       description: "Your artwork has been shared with your network.",

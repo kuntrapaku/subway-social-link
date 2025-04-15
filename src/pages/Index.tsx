@@ -1,7 +1,6 @@
-
 import React, { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
-import NewPost from "@/components/NewPost";
+import NewPost, { Post } from "@/components/NewPost";
 import PostCard from "@/components/PostCard";
 import ProfileCard from "@/components/ProfileCard";
 import SuggestedConnections from "@/components/SuggestedConnections";
@@ -17,7 +16,7 @@ import {
   Music,
   Globe
 } from "lucide-react";
-import { Button } from "@/components/ui/button"; // Add this missing import
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -34,8 +33,7 @@ const Index = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const isMobile = useIsMobile();
   
-  // Sample data
-  const posts = [
+  const [posts, setPosts] = useState<Post[]>([
     {
       id: "1",
       author: {
@@ -87,20 +85,21 @@ const Index = () => {
       comments: 15,
       isLiked: false
     }
-  ];
+  ]);
+
+  const handleNewPost = (newPost: Post) => {
+    setPosts(currentPosts => [newPost, ...currentPosts]);
+  };
 
   return (
     <Layout>
       <div className="relative pb-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Main Content Area */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-            {/* Left Sidebar */}
             <div className="md:col-span-1 hidden md:block">
               <div className="sticky top-20 space-y-6">
                 <ProfileCard isCurrentUser={true} />
                 
-                {/* Categories Navigation - Indian Film Context */}
                 <div className="rounded-xl bg-white p-4 shadow-md border border-orange-100">
                   <h3 className="font-medium text-gray-900 mb-3">Film Categories</h3>
                   <div className="space-y-2">
@@ -151,7 +150,6 @@ const Index = () => {
                   </div>
                 </div>
                 
-                {/* Creative Departments */}
                 <div className="rounded-xl bg-white p-4 shadow-md border border-orange-100">
                   <h3 className="font-medium text-gray-900 mb-3">Creative Departments</h3>
                   <NavigationMenu>
@@ -213,7 +211,6 @@ const Index = () => {
               </div>
             </div>
             
-            {/* Main Feed */}
             <div className="md:col-span-2 lg:col-span-1">
               <div className="rounded-xl bg-white p-6 shadow-md border border-orange-100 mb-6">
                 <Tabs defaultValue="art" className="w-full">
@@ -228,7 +225,6 @@ const Index = () => {
                     </TabsTrigger>
                   </TabsList>
 
-                  {/* Filter Pills for mobile */}
                   <div className="md:hidden mb-4 flex w-full overflow-x-auto pb-2">
                     <button
                       onClick={() => setActiveCategory("all")}
@@ -277,7 +273,7 @@ const Index = () => {
                   </div>
 
                   <TabsContent value="art" className="space-y-4">
-                    <NewPost />
+                    <NewPost onPostCreated={handleNewPost} />
                     {posts.map((post) => (
                       <PostCard key={post.id} post={post} />
                     ))}
@@ -299,12 +295,10 @@ const Index = () => {
               </div>
             </div>
             
-            {/* Right Sidebar */}
             <div className="hidden lg:block lg:col-span-1">
               <div className="sticky top-20 space-y-6">
                 <SuggestedConnections />
                 
-                {/* Trending Topics - Indian Film Industry */}
                 <div className="rounded-xl bg-white p-4 shadow-md border border-orange-100">
                   <h3 className="font-medium text-gray-900 mb-3">Trending in Indian Cinema</h3>
                   <div className="space-y-3">
@@ -335,7 +329,6 @@ const Index = () => {
                   </div>
                 </div>
                 
-                {/* Film Festivals Calendar */}
                 <div className="rounded-xl bg-white p-4 shadow-md border border-orange-100">
                   <h3 className="font-medium text-gray-900 mb-3">Upcoming Film Festivals</h3>
                   <div className="space-y-3">
