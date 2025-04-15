@@ -43,6 +43,10 @@ const PostsSection = ({ posts, onNewPost, onNewFrame, activeCategory, setActiveC
     };
   }, []);
 
+  const handleSwitchToFrames = () => {
+    setActiveTab("frames");
+  };
+
   return (
     <div className="rounded-xl bg-white p-6 shadow-md border border-orange-100 mb-6">
       <Tabs defaultValue="art" value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -68,7 +72,10 @@ const PostsSection = ({ posts, onNewPost, onNewFrame, activeCategory, setActiveC
         )}
 
         <TabsContent value="art" className="space-y-4">
-          <NewPost onPostCreated={onNewPost} />
+          <NewPost 
+            onPostCreated={onNewPost} 
+            onSwitchToFrames={handleSwitchToFrames}
+          />
           {posts.map((post) => (
             <PostCard key={post.id} post={post} />
           ))}

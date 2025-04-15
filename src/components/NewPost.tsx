@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Image, Users, Calendar, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 
 // Define the Post type to match what's used in the Index page
 export interface Post {
@@ -23,13 +22,13 @@ export interface Post {
 
 interface NewPostProps {
   onPostCreated?: (post: Post) => void;
+  onSwitchToFrames?: () => void;
 }
 
-const NewPost = ({ onPostCreated }: NewPostProps = {}) => {
+const NewPost = ({ onPostCreated, onSwitchToFrames }: NewPostProps = {}) => {
   const [content, setContent] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +75,9 @@ const NewPost = ({ onPostCreated }: NewPostProps = {}) => {
   };
 
   const handleFramesClick = () => {
-    navigate("/profile", { state: { activeTab: "videos" } });
+    if (onSwitchToFrames) {
+      onSwitchToFrames();
+    }
   };
 
   return (
