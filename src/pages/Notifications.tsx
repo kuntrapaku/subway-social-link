@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Bell } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +9,11 @@ import NotificationList from "@/components/notifications/NotificationList";
 
 const Notifications = () => {
   const { notifications, unreadCount, markAllAsRead, handleNotificationClick } = useNotifications();
+  const [activeFilter, setActiveFilter] = useState("all");
+
+  const handleFilterChange = (filter: string) => {
+    setActiveFilter(filter);
+  };
 
   return (
     <Layout>
@@ -26,7 +31,8 @@ const Notifications = () => {
             </div>
             <NotificationActions 
               unreadCount={unreadCount} 
-              onMarkAllAsRead={markAllAsRead} 
+              onMarkAllAsRead={markAllAsRead}
+              onFilterChange={handleFilterChange}
             />
           </div>
 
@@ -40,7 +46,7 @@ const Notifications = () => {
             <TabsContent value="all">
               <NotificationList 
                 notifications={notifications} 
-                filter="all"
+                filter={activeFilter !== "all" ? activeFilter : "all"}
                 onNotificationClick={handleNotificationClick} 
               />
             </TabsContent>

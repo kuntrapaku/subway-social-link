@@ -1,7 +1,9 @@
 
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { Heart, MessageCircle, Share2, MoreHorizontal, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { NotificationsContext } from "@/context/NotificationsContext";
 
 interface PostCardProps {
   post: {
@@ -22,14 +24,76 @@ interface PostCardProps {
 const PostCard = ({ post }: PostCardProps) => {
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
   const [likeCount, setLikeCount] = useState(post.likes);
+  const [commentCount, setCommentCount] = useState(post.comments);
+  const [commentText, setCommentText] = useState("");
+  const [showCommentInput, setShowCommentInput] = useState(false);
+  const { toast } = useToast();
+  
+  // Try to use the notifications context if available
+  let notificationsContext;
+  try {
+    notificationsContext = useContext(NotificationsContext);
+  } catch (error) {
+    // Context not available, we'll handle this case
+  }
 
   const handleLike = () => {
     if (isLiked) {
       setLikeCount(likeCount - 1);
     } else {
       setLikeCount(likeCount + 1);
+      // Generate a notification when user likes a post
+      if (notificationsContext?.addNotification) {
+        notificationsContext.addNotification({
+          type: "like",
+          content: `liked your artwork ${post.content.substring(0, 20)}...`,
+          user: "You", // In a real app, this would be the current user's name
+          postId: post.id,
+        });
+      }
+      
+      toast({
+        title: "Post liked",
+        description: "The creator will be notified of your appreciation!",
+      });
     }
     setIsLiked(!isLiked);
+  };
+
+  const handleCommentClick = () => {
+    setShowCommentInput(!showCommentInput);
+  };
+
+  const handleAddComment = () => {
+    if (commentText.trim()) {
+      setCommentCount(commentCount + 1);
+      // Generate a notification when user comments on a post
+      if (notificationsContext?.addNotification) {
+        notificationsContext.addNotification({
+          type: "comment",
+          content: `commented on your post: "${commentText.substring(0, 30)}${commentText.length > 30 ? '...' : ''}"`,
+          user: "You", // In a real app, this would be the current user's name
+          postId: post.id,
+          commentId: `comment-${Date.now()}`,
+        });
+      }
+      
+      toast({
+        title: "Comment added",
+        description: "Your comment has been added to the post!",
+      });
+      
+      setCommentText("");
+      setShowCommentInput(false);
+    }
+  };
+
+  const handleShare = () => {
+    // In a real app, this would open a share dialog
+    toast({
+      title: "Share post",
+      description: "Sharing options would appear here in a production app",
+    });
   };
 
   return (
@@ -76,18 +140,50 @@ const PostCard = ({ post }: PostCardProps) => {
           <Button 
             variant="ghost" 
             className="text-sm flex items-center text-gray-500 hover:text-orange-600"
+            onClick={handleCommentClick}
           >
             <MessageCircle className="h-4 w-4 mr-1" />
-            <span>{post.comments}</span>
+            <span>{commentCount}</span>
           </Button>
           <Button 
             variant="ghost" 
             className="text-sm flex items-center text-gray-500 hover:text-orange-600"
+            onClick={handleShare}
           >
             <Share2 className="h-4 w-4 mr-1" />
             <span>Share</span>
           </Button>
         </div>
+        
+        {showCommentInput && (
+          <div className="mt-3">
+            <textarea
+              className="w-full p-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+              rows={2}
+              placeholder="Add a comment..."
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+            />
+            <div className="flex justify-end mt-2">
+              <Button 
+                size="sm"
+                variant="outline" 
+                className="mr-2"
+                onClick={() => setShowCommentInput(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                size="sm"
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+                onClick={handleAddComment}
+                disabled={!commentText.trim()}
+              >
+                Comment
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

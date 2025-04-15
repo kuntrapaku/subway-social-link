@@ -1,12 +1,12 @@
 
 import React from "react";
-import { CheckCheck, Star } from "lucide-react";
+import { CheckCheck, Star, Bell } from "lucide-react";
 import NotificationItem from "./NotificationItem";
 import { NotificationType } from "@/types/notifications";
 
 interface NotificationListProps {
   notifications: NotificationType[];
-  filter: "all" | "unread" | "mentions";
+  filter: string;
   onNotificationClick: (notification: NotificationType) => void;
 }
 
@@ -21,6 +21,12 @@ const NotificationList: React.FC<NotificationListProps> = ({
     filteredNotifications = notifications.filter(n => !n.read);
   } else if (filter === "mentions") {
     filteredNotifications = notifications.filter(n => n.type === 'mention');
+  } else if (filter === "likes") {
+    filteredNotifications = notifications.filter(n => n.type === 'like');
+  } else if (filter === "comments") {
+    filteredNotifications = notifications.filter(n => n.type === 'comment');
+  } else if (filter === "connections") {
+    filteredNotifications = notifications.filter(n => n.type === 'connection');
   }
   
   if (filteredNotifications.length === 0) {
@@ -30,6 +36,21 @@ const NotificationList: React.FC<NotificationListProps> = ({
           <>
             <Star className="h-12 w-12 mx-auto text-gray-400 mb-2" />
             <p>No mentions yet</p>
+          </>
+        ) : filter === "likes" ? (
+          <>
+            <Bell className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+            <p>No likes yet</p>
+          </>
+        ) : filter === "comments" ? (
+          <>
+            <Bell className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+            <p>No comments yet</p>
+          </>
+        ) : filter === "connections" ? (
+          <>
+            <Bell className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+            <p>No connections yet</p>
           </>
         ) : (
           <>

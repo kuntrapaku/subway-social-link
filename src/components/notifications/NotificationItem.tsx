@@ -2,6 +2,7 @@
 import React from "react";
 import { Heart, MessageSquare, Users, Star, Bell, Clock, ArrowRight } from "lucide-react";
 import { NotificationType } from "@/types/notifications";
+import { Button } from "@/components/ui/button";
 
 interface NotificationItemProps {
   notification: NotificationType;
@@ -24,10 +25,30 @@ export const getNotificationIcon = (type: string) => {
 };
 
 const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onClick }) => {
+  const handleClick = () => {
+    onClick(notification);
+  };
+
+  const getActionText = () => {
+    switch (notification.type) {
+      case "like":
+        return "View post";
+      case "comment":
+        return "View comment";
+      case "connection":
+        return "View artist";
+      case "mention":
+        return "View mention";
+      default:
+        return "View details";
+    }
+  };
+
   return (
     <div 
       className={`p-4 rounded-lg border ${notification.read ? 'bg-white border-gray-200' : 'bg-orange-50 border-orange-200'} transition-colors duration-200 hover:bg-orange-100 cursor-pointer`}
-      onClick={() => onClick(notification)}
+      onClick={handleClick}
+      data-testid="notification-item"
     >
       <div className="flex">
         <div className="mr-4 mt-1">
@@ -42,9 +63,9 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onCli
             </div>
           </div>
           <p className="text-gray-600">{notification.content}</p>
-          {(notification.postId || notification.type === "connection") && (
+          {(notification.postId || notification.type === "connection" || notification.actionUrl) && (
             <div className="mt-1 text-orange-600 text-sm flex items-center">
-              <span>View {notification.type === "connection" ? "connection" : "post"}</span>
+              <span>{getActionText()}</span>
               <ArrowRight className="h-3 w-3 ml-1" />
             </div>
           )}
