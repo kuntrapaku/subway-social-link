@@ -1,11 +1,12 @@
-
 import { Link } from "react-router-dom";
 import { Home, Users, Bell, MessageSquare, User, Menu, Search, Clapperboard } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <nav className="fixed top-0 w-full bg-white border-b border-subway-100 z-50">
@@ -52,11 +53,17 @@ const Navbar = () => {
                 placeholder="Search creators, art..."
               />
             </div>
-            <Link to="/profile" className="p-1">
-              <div className="h-8 w-8 rounded-full bg-orange-200 flex items-center justify-center">
-                <User className="h-5 w-5 text-orange-600" />
-              </div>
-            </Link>
+            {user ? (
+              <Link to="/profile" className="p-1">
+                <div className="h-8 w-8 rounded-full bg-orange-200 flex items-center justify-center">
+                  <User className="h-5 w-5 text-orange-600" />
+                </div>
+              </Link>
+            ) : (
+              <Link to="/login" className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition">
+                Login
+              </Link>
+            )}
           </div>
           <div className="-mr-2 flex items-center sm:hidden">
             <Button
@@ -97,12 +104,14 @@ const Navbar = () => {
             >
               Notifications
             </Link>
-            <Link
-              to="/profile"
-              className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-orange-300 text-gray-500 hover:text-gray-700 font-medium"
-            >
-              Profile
-            </Link>
+            {!user && (
+              <Link
+                to="/login"
+                className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-orange-300 text-gray-500 hover:text-gray-700 font-medium"
+              >
+                Login
+              </Link>
+            )}
           </div>
           <div className="pt-4 pb-3 border-t border-gray-200">
             <div className="flex items-center px-4">
