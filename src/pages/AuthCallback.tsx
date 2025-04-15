@@ -35,7 +35,16 @@ const AuthCallback = () => {
             description: "You are now logged in.",
           });
         } else {
-          throw new Error("No access token found in URL");
+          // Check for error in the URL query parameters
+          const urlParams = new URLSearchParams(location.search);
+          const errorCode = urlParams.get("error");
+          const errorDescription = urlParams.get("error_description");
+          
+          if (errorCode) {
+            throw new Error(errorDescription || `Authentication error: ${errorCode}`);
+          } else {
+            throw new Error("No access token found in URL");
+          }
         }
       } catch (err: any) {
         console.error("Auth callback error:", err);
