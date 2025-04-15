@@ -4,7 +4,7 @@ import ProfileCard from "@/components/ProfileCard";
 import PostCard from "@/components/PostCard";
 import FrameCard from "@/components/FrameCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Image, Video, Newspaper, Calendar } from "lucide-react";
+import { Users, Image, Video, Newspaper, Calendar, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Post } from "@/components/NewPost";
 import { getPosts, getFrames } from "@/utils/postsStorage";
