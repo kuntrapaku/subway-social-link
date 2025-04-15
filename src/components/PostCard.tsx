@@ -1,9 +1,8 @@
 
-import { useState, useContext } from "react";
+import { useState } from "react";
 import { Heart, MessageCircle, Share2, MoreHorizontal, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { NotificationsContext } from "@/context/NotificationsContext";
 
 interface PostCardProps {
   post: {
@@ -28,29 +27,12 @@ const PostCard = ({ post }: PostCardProps) => {
   const [commentText, setCommentText] = useState("");
   const [showCommentInput, setShowCommentInput] = useState(false);
   const { toast } = useToast();
-  
-  // Try to use the notifications context if available
-  let notificationsContext;
-  try {
-    notificationsContext = useContext(NotificationsContext);
-  } catch (error) {
-    // Context not available, we'll handle this case
-  }
 
   const handleLike = () => {
     if (isLiked) {
       setLikeCount(likeCount - 1);
     } else {
       setLikeCount(likeCount + 1);
-      // Generate a notification when user likes a post
-      if (notificationsContext?.addNotification) {
-        notificationsContext.addNotification({
-          type: "like",
-          content: `liked your artwork ${post.content.substring(0, 20)}...`,
-          user: "You", // In a real app, this would be the current user's name
-          postId: post.id,
-        });
-      }
       
       toast({
         title: "Post liked",
@@ -67,16 +49,6 @@ const PostCard = ({ post }: PostCardProps) => {
   const handleAddComment = () => {
     if (commentText.trim()) {
       setCommentCount(commentCount + 1);
-      // Generate a notification when user comments on a post
-      if (notificationsContext?.addNotification) {
-        notificationsContext.addNotification({
-          type: "comment",
-          content: `commented on your post: "${commentText.substring(0, 30)}${commentText.length > 30 ? '...' : ''}"`,
-          user: "You", // In a real app, this would be the current user's name
-          postId: post.id,
-          commentId: `comment-${Date.now()}`,
-        });
-      }
       
       toast({
         title: "Comment added",

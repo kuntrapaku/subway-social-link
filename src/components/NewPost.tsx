@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Image, Users, Calendar, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const NewPost = () => {
   const [content, setContent] = useState("");
@@ -12,10 +12,10 @@ const NewPost = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!content.trim()) {
+    if (!content.trim() && !image) {
       toast({
         title: "Empty art post",
-        description: "Please add some description to your art.",
+        description: "Please add some description or an image to your art.",
         variant: "destructive",
       });
       return;
@@ -33,7 +33,7 @@ const NewPost = () => {
   };
 
   return (
-    <div className="subway-card mb-4">
+    <div className="bg-white rounded-lg shadow-md border border-orange-100 p-4 mb-4">
       <form onSubmit={handleSubmit}>
         <div className="flex">
           <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center mr-3">
@@ -98,7 +98,6 @@ const NewPost = () => {
           <Button 
             type="submit"
             className="bg-orange-600 text-white hover:bg-orange-700 transition-colors"
-            disabled={!content.trim() && !image}
           >
             Share Art
           </Button>
