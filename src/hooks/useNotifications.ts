@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationType } from "@/types/notifications";
 
@@ -81,7 +80,6 @@ const mockNotifications: NotificationType[] = [
 ];
 
 export const useNotifications = () => {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<NotificationType[]>(mockNotifications);
   const [lastNotificationTime, setLastNotificationTime] = useState<Date>(new Date());
@@ -142,42 +140,13 @@ export const useNotifications = () => {
     );
   };
 
+  // This function will be provided by a wrapper component that has access to navigation
   const handleNotificationClick = (notification: NotificationType) => {
     // Mark the notification as read
     markAsRead(notification.id);
     
-    // Navigate to the appropriate location based on notification type
-    if (notification.actionUrl) {
-      // If there's a specific URL to navigate to
-      navigate(notification.actionUrl);
-      toast({
-        title: "Navigating",
-        description: `Viewing ${notification.content}`,
-      });
-    } else if (notification.type === "connection") {
-      navigate("/network");
-      toast({
-        title: "Film Artist",
-        description: `Viewing your connection with ${notification.user}`,
-      });
-    } else if (notification.postId) {
-      // We're using a query parameter to identify which post to show
-      // In a real app, this would likely be a route parameter
-      navigate(`/?postId=${notification.postId}`);
-      
-      let toastDescription = `Viewing post related to ${notification.user}'s activity`;
-      
-      if (notification.commentId) {
-        toastDescription = `Viewing ${notification.user}'s comment`;
-      } else if (notification.type === "like") {
-        toastDescription = `Viewing post liked by ${notification.user}`;
-      }
-      
-      toast({
-        title: "Post View",
-        description: toastDescription,
-      });
-    }
+    // We'll return the notification so the wrapper can handle navigation
+    return notification;
   };
 
   const addNotification = (notification: Omit<NotificationType, 'id' | 'time' | 'read'>) => {

@@ -8,7 +8,7 @@ interface NotificationsContextType {
   unreadCount: number;
   markAllAsRead: () => void;
   markAsRead: (id: string) => void;
-  handleNotificationClick: (notification: NotificationType) => void;
+  handleNotificationClick: (notification: NotificationType) => NotificationType;
   addNotification: (notification: Omit<NotificationType, 'id' | 'time' | 'read'>) => NotificationType;
   lastNotificationTime: Date;
 }

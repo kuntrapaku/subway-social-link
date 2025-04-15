@@ -1,18 +1,61 @@
 
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Bell } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotificationsContext } from "@/context/NotificationsContext";
 import NotificationActions from "@/components/notifications/NotificationActions";
 import NotificationList from "@/components/notifications/NotificationList";
+import { useToast } from "@/hooks/use-toast";
+import { NotificationType } from "@/types/notifications";
 
 const Notifications = () => {
-  const { notifications, unreadCount, markAllAsRead, handleNotificationClick } = useNotifications();
+  const { notifications, unreadCount, markAllAsRead, handleNotificationClick } = useNotificationsContext();
   const [activeFilter, setActiveFilter] = useState("all");
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleFilterChange = (filter: string) => {
     setActiveFilter(filter);
+  };
+
+  const handleNotificationItemClick = (notification: NotificationType) => {
+    // First call the context handler to mark as read
+    const processedNotification = handleNotificationClick(notification);
+    
+    // Now handle navigation
+    if (processedNotification.actionUrl) {
+      // If there's a specific URL to navigate to
+      navigate(processedNotification.actionUrl);
+      toast({
+        title: "Navigating",
+        description: `Viewing ${processedNotification.content}`,
+      });
+    } else if (processedNotification.type === "connection") {
+      navigate("/network");
+      toast({
+        title: "Film Artist",
+        description: `Viewing your connection with ${processedNotification.user}`,
+      });
+    } else if (processedNotification.postId) {
+      // We're using a query parameter to identify which post to show
+      // In a real app, this would likely be a route parameter
+      navigate(`/?postId=${processedNotification.postId}`);
+      
+      let toastDescription = `Viewing post related to ${processedNotification.user}'s activity`;
+      
+      if (processedNotification.commentId) {
+        toastDescription = `Viewing ${processedNotification.user}'s comment`;
+      } else if (processedNotification.type === "like") {
+        toastDescription = `Viewing post liked by ${processedNotification.user}`;
+      }
+      
+      toast({
+        title: "Post View",
+        description: toastDescription,
+      });
+    }
   };
 
   return (
@@ -47,7 +90,7 @@ const Notifications = () => {
               <NotificationList 
                 notifications={notifications} 
                 filter={activeFilter !== "all" ? activeFilter : "all"}
-                onNotificationClick={handleNotificationClick} 
+                onNotificationClick={handleNotificationItemClick} 
               />
             </TabsContent>
 
@@ -55,7 +98,7 @@ const Notifications = () => {
               <NotificationList 
                 notifications={notifications} 
                 filter="unread"
-                onNotificationClick={handleNotificationClick} 
+                onNotificationClick={handleNotificationItemClick} 
               />
             </TabsContent>
 
@@ -63,7 +106,7 @@ const Notifications = () => {
               <NotificationList 
                 notifications={notifications} 
                 filter="mentions"
-                onNotificationClick={handleNotificationClick} 
+                onNotificationClick={handleNotificationItemClick} 
               />
             </TabsContent>
           </Tabs>
