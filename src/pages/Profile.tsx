@@ -8,11 +8,15 @@ import { Users, Image, Video, Newspaper, Calendar, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Post } from "@/components/NewPost";
 import { getPosts, getFrames } from "@/utils/postsStorage";
+import NewFrame from "@/components/NewFrame";
+import { useToast } from "@/hooks/use-toast";
+import { addFrame } from "@/utils/postsStorage";
 
 const Profile = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [frames, setFrames] = useState<Post[]>([]);
   const [activeTab, setActiveTab] = useState("posts");
+  const { toast } = useToast();
 
   useEffect(() => {
     // Load posts and frames from localStorage when component mounts
@@ -43,6 +47,16 @@ const Profile = () => {
       window.removeEventListener("profile-updated", handleStorageChange);
     };
   }, []);
+
+  const handleNewFrame = (frame: Post) => {
+    const updatedFrames = addFrame(frame);
+    setFrames(updatedFrames);
+    
+    toast({
+      title: "Video uploaded successfully",
+      description: "Your video frame has been added to your profile.",
+    });
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -133,8 +147,10 @@ const Profile = () => {
                   </div>
                 </TabsContent>
                 <TabsContent value="videos" className="mt-0">
+                  <NewFrame onFrameCreated={handleNewFrame} />
+                  
                   {frames.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                       {frames.map((frame) => (
                         <div key={frame.id} className="aspect-video bg-subway-100 rounded-lg relative overflow-hidden">
                           <div className="absolute inset-0 flex items-center justify-center">
@@ -147,10 +163,10 @@ const Profile = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-gray-500 mt-4">
                       <Video className="h-12 w-12 mx-auto text-gray-400 mb-3" />
                       <p>No videos to display</p>
-                      <p className="text-sm mt-2">Share your first frame to see it here!</p>
+                      <p className="text-sm mt-2">Use the form above to upload your first video!</p>
                     </div>
                   )}
                 </TabsContent>
