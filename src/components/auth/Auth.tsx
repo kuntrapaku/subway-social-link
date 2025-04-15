@@ -24,6 +24,12 @@ const Auth = () => {
     return null
   }
 
+  // Get the current URL for redirect
+  const getRedirectUrl = () => {
+    // Use the current origin (protocol + domain + port)
+    return `${window.location.origin}/auth/callback`;
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -32,6 +38,9 @@ const Auth = () => {
       const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: getRedirectUrl(),
+        },
       })
 
       if (error) throw error
