@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Image, Users, Calendar, Video } from "lucide-react";
+import { Image, Users, Calendar, Video, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Post } from "@/components/NewPost";
@@ -12,6 +12,7 @@ interface NewFrameProps {
 const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
   const [content, setContent] = useState("");
   const [video, setVideo] = useState<File | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,7 +36,7 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
       },
       timeAgo: "Just now",
       content: content,
-      imageUrl: video ? URL.createObjectURL(video) : undefined,
+      imageUrl: videoPreviewUrl || undefined,
       likes: 0,
       comments: 0,
       isLiked: false,
@@ -56,6 +57,26 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
     // Reset form
     setContent("");
     setVideo(null);
+    setVideoPreviewUrl(null);
+  };
+
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedVideo = e.target.files[0];
+      setVideo(selectedVideo);
+      
+      // Create video preview URL
+      const videoUrl = URL.createObjectURL(selectedVideo);
+      setVideoPreviewUrl(videoUrl);
+    }
+  };
+
+  const handleRemoveVideo = () => {
+    setVideo(null);
+    if (videoPreviewUrl) {
+      URL.revokeObjectURL(videoPreviewUrl);
+      setVideoPreviewUrl(null);
+    }
   };
 
   return (
@@ -76,19 +97,18 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
           />
         </div>
         
-        {video && (
+        {videoPreviewUrl && (
           <div className="mt-3 relative">
-            <div className="relative rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center h-60">
-              <Video className="h-16 w-16 text-orange-400" />
-              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-2 text-sm truncate">
-                {video.name}
-              </div>
-            </div>
+            <video 
+              src={videoPreviewUrl}
+              className="w-full h-auto rounded-lg object-cover max-h-60"
+              controls
+            />
             <Button 
               variant="destructive"
               size="sm"
               className="absolute top-2 right-2"
-              onClick={() => setVideo(null)}
+              onClick={handleRemoveVideo}
             >
               Remove
             </Button>
@@ -102,11 +122,7 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
                 type="file"
                 className="hidden"
                 accept="video/*"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    setVideo(e.target.files[0]);
-                  }
-                }}
+                onChange={handleVideoChange}
               />
               <div className="flex items-center text-gray-500 hover:text-orange-600 p-2 rounded-md hover:bg-gray-100">
                 <Video className="h-5 w-5 mr-1" />

@@ -1,8 +1,7 @@
-
 import Navbar from "@/components/Navbar";
 import ProfileCard from "@/components/ProfileCard";
 import PostCard from "@/components/PostCard";
-import FrameCard from "@/components/FrameCard";
+import PlayableFrameCard from "@/components/PlayableFrameCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Image, Video, Newspaper, Calendar, Play } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -120,6 +119,7 @@ const Profile = () => {
                     <span>Connections</span>
                   </TabsTrigger>
                 </TabsList>
+                
                 <TabsContent value="posts" className="mt-0">
                   {posts.length > 0 ? (
                     posts.map((post) => (
@@ -133,6 +133,7 @@ const Profile = () => {
                     </div>
                   )}
                 </TabsContent>
+                
                 <TabsContent value="photos" className="mt-0">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {posts.filter(post => post.imageUrl && !post.isVideo).length > 0 ? (
@@ -154,13 +155,14 @@ const Profile = () => {
                     )}
                   </div>
                 </TabsContent>
+                
                 <TabsContent value="videos" className="mt-0">
                   <NewFrame onFrameCreated={handleNewFrame} />
                   
                   {frames.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                       {frames.map((frame) => (
-                        <FrameCard key={frame.id} frame={frame} />
+                        <PlayableFrameCard key={frame.id} frame={frame} />
                       ))}
                     </div>
                   ) : (
@@ -171,6 +173,7 @@ const Profile = () => {
                     </div>
                   )}
                 </TabsContent>
+                
                 <TabsContent value="events" className="mt-0">
                   <div className="text-center py-8 text-gray-500">
                     <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-3" />

@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import NewPost, { Post } from "@/components/NewPost";
 import NewFrame from "@/components/NewFrame";
 import PostCard from "@/components/PostCard";
-import FrameCard from "@/components/FrameCard";
+import PlayableFrameCard from "@/components/PlayableFrameCard";
 import { Button } from "@/components/ui/button";
 import CategoryList from "./CategoryList";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -86,7 +86,7 @@ const PostsSection = ({ posts, onNewPost, onNewFrame, activeCategory, setActiveC
             <>
               <NewFrame onFrameCreated={onNewFrame} />
               {frames.map((frame) => (
-                <FrameCard key={frame.id} frame={frame} />
+                <PlayableFrameCard key={frame.id} frame={frame} />
               ))}
             </>
           ) : (
