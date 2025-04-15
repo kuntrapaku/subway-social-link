@@ -1,46 +1,27 @@
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '@/integrations/supabase/client'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AlertCircle } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
 
 const Auth = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
-
-  // Check if Supabase is properly configured
-  if (!supabase) {
-    return (
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader>
-          <CardTitle className="text-red-500 flex items-center gap-2">
-            <AlertCircle size={20} />
-            Configuration Error
-          </CardTitle>
-          <CardDescription>
-            Supabase configuration is missing. Please set the required environment variables:
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-amber-50 p-4 rounded border border-amber-200 text-amber-800">
-            <p className="font-medium mb-2">Required Environment Variables:</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>VITE_SUPABASE_URL</li>
-              <li>VITE_SUPABASE_ANON_KEY</li>
-            </ul>
-            <p className="mt-3 text-sm">
-              These can be found in your Supabase project dashboard under Project Settings &gt; API.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  
+  // If already logged in, redirect to home page
+  if (user) {
+    navigate('/')
+    return null
   }
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -86,6 +67,9 @@ const Auth = () => {
         title: "Welcome back!",
         description: "You've successfully signed in.",
       })
+      
+      // Redirect to home page on successful sign in
+      navigate('/')
     } catch (error: any) {
       toast({
         title: "Error",
