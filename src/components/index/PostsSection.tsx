@@ -48,29 +48,14 @@ const PostsSection = ({ posts, onNewPost, onNewFrame, activeCategory, setActiveC
   };
 
   const handleNewVideo = (videoFile: File) => {
-    // Create a new frame post with the video
-    const newFrame: Post = {
-      id: Date.now().toString(),
-      author: {
-        name: "You",
-        title: "Filmmaker"
-      },
-      timeAgo: "Just now",
-      content: "Shared a new video",
-      imageUrl: URL.createObjectURL(videoFile),
-      likes: 0,
-      comments: 0,
-      isLiked: false,
-      isVideo: true
-    };
-
-    // Call the onNewFrame callback
-    onNewFrame(newFrame);
-
-    // Switch to frames tab to show the uploaded video
-    setActiveTab("frames");
+    // For videos uploaded through the NewPost component, they will be displayed
+    // directly in the timeline as video posts, so we don't need to create a frame here
+    // The video post creation is now handled by the NewPost component itself
   };
 
+  // Filter posts to display videos in the Art tab
+  const artPosts = posts;
+  
   return (
     <div className="rounded-xl bg-white p-6 shadow-md border border-orange-100 mb-6">
       <Tabs defaultValue="art" value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -98,10 +83,9 @@ const PostsSection = ({ posts, onNewPost, onNewFrame, activeCategory, setActiveC
         <TabsContent value="art" className="space-y-4">
           <NewPost 
             onPostCreated={onNewPost} 
-            onNewVideo={handleNewVideo}
             onSwitchToFrames={handleSwitchToFrames}
           />
-          {posts.map((post) => (
+          {artPosts.map((post) => (
             <PostCard key={post.id} post={post} />
           ))}
         </TabsContent>

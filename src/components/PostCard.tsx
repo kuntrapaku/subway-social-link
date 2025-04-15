@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Heart, MessageCircle, Share2, MoreHorizontal, User } from "lucide-react";
+
+import { useState, useRef } from "react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, User, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { togglePostLike, addCommentToPost } from "@/utils/postsStorage";
@@ -17,6 +18,7 @@ interface PostCardProps {
     likes: number;
     comments: number;
     isLiked?: boolean;
+    isVideo?: boolean;
   };
 }
 
@@ -26,6 +28,8 @@ const PostCard = ({ post }: PostCardProps) => {
   const [commentCount, setCommentCount] = useState(post.comments);
   const [commentText, setCommentText] = useState("");
   const [showCommentInput, setShowCommentInput] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
 
   const handleLike = () => {
@@ -71,6 +75,17 @@ const PostCard = ({ post }: PostCardProps) => {
     });
   };
 
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md border border-orange-100 p-4 mb-4 animate-fade-in">
       <div className="flex justify-between">
@@ -92,12 +107,37 @@ const PostCard = ({ post }: PostCardProps) => {
       <div className="mt-3">
         <p className="text-sm">{post.content}</p>
         {post.imageUrl && (
-          <div className="mt-3">
-            <img 
-              src={post.imageUrl} 
-              alt="Art" 
-              className="w-full h-auto rounded-lg object-cover max-h-96" 
-            />
+          <div className="mt-3 relative">
+            {post.isVideo ? (
+              <>
+                <video 
+                  ref={videoRef}
+                  src={post.imageUrl} 
+                  className="w-full h-auto rounded-lg object-cover max-h-96"
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                  onEnded={() => setIsPlaying(false)}
+                />
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full h-12 w-12"
+                  onClick={togglePlay}
+                >
+                  {isPlaying ? (
+                    <Pause className="h-6 w-6" />
+                  ) : (
+                    <Play className="h-6 w-6" />
+                  )}
+                </Button>
+              </>
+            ) : (
+              <img 
+                src={post.imageUrl} 
+                alt="Art" 
+                className="w-full h-auto rounded-lg object-cover max-h-96" 
+              />
+            )}
           </div>
         )}
       </div>

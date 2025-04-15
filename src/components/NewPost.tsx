@@ -44,24 +44,6 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
       return;
     }
     
-    // If video is selected, handle it differently
-    if (video) {
-      if (onNewVideo) {
-        onNewVideo(video);
-        
-        // Show success toast
-        toast({
-          title: "Video uploaded!",
-          description: "Your video has been uploaded successfully.",
-        });
-        
-        // Reset form
-        setContent("");
-        setVideo(null);
-      }
-      return;
-    }
-    
     // Create a new post object
     const newPost: Post = {
       id: Date.now().toString(), // Generate a unique ID based on timestamp
@@ -71,11 +53,11 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
       },
       timeAgo: "Just now",
       content: content,
-      imageUrl: image ? URL.createObjectURL(image) : undefined,
+      imageUrl: image ? URL.createObjectURL(image) : video ? URL.createObjectURL(video) : undefined,
       likes: 0,
       comments: 0,
       isLiked: false,
-      isVideo: false
+      isVideo: video !== null // Set isVideo flag based on whether a video was selected
     };
     
     // Call the callback to add the post to the timeline
@@ -85,30 +67,26 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
     
     // Show success toast
     toast({
-      title: "Art shared!",
-      description: "Your artwork has been shared with your network.",
+      title: video ? "Video shared!" : "Art shared!",
+      description: video ? "Your video has been shared with your network." : "Your artwork has been shared with your network.",
     });
     
     // Reset form
     setContent("");
     setImage(null);
+    setVideo(null);
   };
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedVideo = e.target.files[0];
       setVideo(selectedVideo);
+      setImage(null); // Clear image if a video is selected
       
-      // If we have direct video upload capability
-      if (onNewVideo) {
-        onNewVideo(selectedVideo);
-        
-        // Show success toast
-        toast({
-          title: "Video selected",
-          description: "Your video has been selected. Click Share Art to post.",
-        });
-      }
+      toast({
+        title: "Video selected",
+        description: "Your video has been selected. Click Share Art to post.",
+      });
     }
   };
 
