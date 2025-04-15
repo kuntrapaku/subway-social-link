@@ -22,23 +22,43 @@ export interface Post {
 
 interface NewPostProps {
   onPostCreated?: (post: Post) => void;
+  onNewVideo?: (video: File) => void;
   onSwitchToFrames?: () => void;
 }
 
-const NewPost = ({ onPostCreated, onSwitchToFrames }: NewPostProps = {}) => {
+const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps = {}) => {
   const [content, setContent] = useState("");
   const [image, setImage] = useState<File | null>(null);
+  const [video, setVideo] = useState<File | null>(null);
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!content.trim() && !image) {
+    if (!content.trim() && !image && !video) {
       toast({
         title: "Empty art post",
-        description: "Please add some description or an image to your art.",
+        description: "Please add some description, an image, or a video to your art.",
         variant: "destructive",
       });
+      return;
+    }
+    
+    // If video is selected, handle it differently
+    if (video) {
+      if (onNewVideo) {
+        onNewVideo(video);
+        
+        // Show success toast
+        toast({
+          title: "Video uploaded!",
+          description: "Your video has been uploaded successfully.",
+        });
+        
+        // Reset form
+        setContent("");
+        setVideo(null);
+      }
       return;
     }
     
@@ -74,9 +94,21 @@ const NewPost = ({ onPostCreated, onSwitchToFrames }: NewPostProps = {}) => {
     setImage(null);
   };
 
-  const handleFramesClick = () => {
-    if (onSwitchToFrames) {
-      onSwitchToFrames();
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedVideo = e.target.files[0];
+      setVideo(selectedVideo);
+      
+      // If we have direct video upload capability
+      if (onNewVideo) {
+        onNewVideo(selectedVideo);
+        
+        // Show success toast
+        toast({
+          title: "Video selected",
+          description: "Your video has been selected. Click Share Art to post.",
+        });
+      }
     }
   };
 
@@ -116,6 +148,24 @@ const NewPost = ({ onPostCreated, onSwitchToFrames }: NewPostProps = {}) => {
           </div>
         )}
         
+        {video && (
+          <div className="mt-3 relative">
+            <video 
+              src={URL.createObjectURL(video)} 
+              className="w-full h-auto rounded-lg object-cover max-h-60"
+              controls
+            />
+            <Button 
+              variant="destructive"
+              size="sm"
+              className="absolute top-2 right-2"
+              onClick={() => setVideo(null)}
+            >
+              Remove
+            </Button>
+          </div>
+        )}
+        
         <div className="mt-4 flex justify-between items-center">
           <div className="flex space-x-2">
             <label className="cursor-pointer">
@@ -126,6 +176,7 @@ const NewPost = ({ onPostCreated, onSwitchToFrames }: NewPostProps = {}) => {
                 onChange={(e) => {
                   if (e.target.files && e.target.files[0]) {
                     setImage(e.target.files[0]);
+                    setVideo(null); // Clear video if an image is selected
                   }
                 }}
               />
@@ -134,13 +185,18 @@ const NewPost = ({ onPostCreated, onSwitchToFrames }: NewPostProps = {}) => {
                 <span className="text-sm">Photo</span>
               </div>
             </label>
-            <div 
-              className="flex items-center text-gray-500 hover:text-orange-600 p-2 rounded-md hover:bg-gray-100 cursor-pointer"
-              onClick={handleFramesClick}
-            >
-              <Video className="h-5 w-5 mr-1" />
-              <span className="text-sm">Frames</span>
-            </div>
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                className="hidden"
+                accept="video/*"
+                onChange={handleVideoChange}
+              />
+              <div className="flex items-center text-gray-500 hover:text-orange-600 p-2 rounded-md hover:bg-gray-100">
+                <Video className="h-5 w-5 mr-1" />
+                <span className="text-sm">Video</span>
+              </div>
+            </label>
             <div className="flex items-center text-gray-500 hover:text-orange-600 p-2 rounded-md hover:bg-gray-100 cursor-pointer">
               <Calendar className="h-5 w-5 mr-1" />
               <span className="text-sm">Event</span>

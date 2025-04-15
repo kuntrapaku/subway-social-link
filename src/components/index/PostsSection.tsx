@@ -9,7 +9,7 @@ import PlayableFrameCard from "@/components/PlayableFrameCard";
 import { Button } from "@/components/ui/button";
 import CategoryList from "./CategoryList";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getFrames } from "@/utils/postsStorage";
+import { getFrames, addFrame } from "@/utils/postsStorage";
 
 interface PostsSectionProps {
   posts: Post[];
@@ -47,6 +47,30 @@ const PostsSection = ({ posts, onNewPost, onNewFrame, activeCategory, setActiveC
     setActiveTab("frames");
   };
 
+  const handleNewVideo = (videoFile: File) => {
+    // Create a new frame post with the video
+    const newFrame: Post = {
+      id: Date.now().toString(),
+      author: {
+        name: "You",
+        title: "Filmmaker"
+      },
+      timeAgo: "Just now",
+      content: "Shared a new video",
+      imageUrl: URL.createObjectURL(videoFile),
+      likes: 0,
+      comments: 0,
+      isLiked: false,
+      isVideo: true
+    };
+
+    // Call the onNewFrame callback
+    onNewFrame(newFrame);
+
+    // Switch to frames tab to show the uploaded video
+    setActiveTab("frames");
+  };
+
   return (
     <div className="rounded-xl bg-white p-6 shadow-md border border-orange-100 mb-6">
       <Tabs defaultValue="art" value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -74,6 +98,7 @@ const PostsSection = ({ posts, onNewPost, onNewFrame, activeCategory, setActiveC
         <TabsContent value="art" className="space-y-4">
           <NewPost 
             onPostCreated={onNewPost} 
+            onNewVideo={handleNewVideo}
             onSwitchToFrames={handleSwitchToFrames}
           />
           {posts.map((post) => (
