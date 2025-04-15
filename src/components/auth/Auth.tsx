@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/integrations/supabase/client'
@@ -11,7 +10,7 @@ import { useAuth } from '@/context/AuthContext'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { InfoCircle } from 'lucide-react'
+import { Info } from 'lucide-react'
 
 const Auth = () => {
   const [email, setEmail] = useState('')
@@ -22,15 +21,12 @@ const Auth = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
   
-  // If already logged in, redirect to home page
   if (user) {
     navigate('/')
     return null
   }
 
-  // Get the current URL for redirect
   const getRedirectUrl = () => {
-    // Use the current origin (protocol + domain + port)
     return `${window.location.origin}/auth/callback`;
   };
 
@@ -41,7 +37,6 @@ const Auth = () => {
       setLoading(true)
       
       if (skipEmailConfirmation) {
-        // For development, use signInWithPassword after signUp to auto-verify
         const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -49,7 +44,6 @@ const Auth = () => {
         
         if (signUpError) throw signUpError
         
-        // Auto sign in after sign up (for development only)
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -62,10 +56,8 @@ const Auth = () => {
           description: "You've been automatically signed in!",
         })
         
-        // Redirect to home page
         navigate('/')
       } else {
-        // Normal sign up flow with email confirmation
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -109,7 +101,6 @@ const Auth = () => {
         description: "You've successfully signed in.",
       })
       
-      // Redirect to home page on successful sign in
       navigate('/')
     } catch (error: any) {
       toast({
@@ -201,11 +192,7 @@ const Auth = () => {
               {skipEmailConfirmation && (
                 <Alert variant="default" className="bg-yellow-50 border-yellow-200">
                   <AlertDescription className="flex items-center gap-2 text-amber-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-info">
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M12 16v-4" />
-                      <path d="M12 8h.01" />
-                    </svg>
+                    <Info width={18} height={18} />
                     Using direct sign-in for development. Disable this in production.
                   </AlertDescription>
                 </Alert>
