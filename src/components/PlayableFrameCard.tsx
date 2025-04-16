@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { toggleFrameLike, addCommentToFrame } from "@/utils/postsStorage";
 import { Post } from "@/components/NewPost";
+import { useAuth } from "@/context/AuthContext";
 
 interface PlayableFrameCardProps {
   frame: Post;
@@ -22,9 +23,27 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const frameIdRef = useRef(frame.id);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Use ref to track if component is mounted
   const isMounted = useRef(true);
+  const objectUrlRef = useRef<string | null>(null);
+  
+  // Log authentication state for debugging
+  useEffect(() => {
+    console.log(`[Frame ${frame.id}] Auth state:`, user ? "Logged in" : "Not logged in");
+    console.log(`[Frame ${frame.id}] Video URL:`, frame.imageUrl);
+    
+    // Reset video state when auth changes
+    if (videoRef.current) {
+      setVideoLoaded(false);
+      setVideoError(false);
+      setIsPlaying(false);
+      
+      // Increment attempts to force remount of video element
+      setVideoAttempts(prev => prev + 1);
+    }
+  }, [user, frame.id, frame.imageUrl]);
   
   useEffect(() => {
     // Set mount status
@@ -42,6 +61,12 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
         videoRef.current.pause();
         videoRef.current.src = "";
         videoRef.current.load();
+      }
+      
+      // Release any object URLs we created
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
       }
     };
   }, [frame.id]);
@@ -64,14 +89,14 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
   
   // Main effect for loading and monitoring video
   useEffect(() => {
-    // Skip if no video or no ref
-    if (!videoUrl || !videoRef.current) {
-      console.log(`[Frame ${frame.id}] No valid video URL or ref`);
+    // Skip if no video or no ref or no user
+    if (!videoUrl || !videoRef.current || !user) {
+      console.log(`[Frame ${frame.id}] No valid video URL, ref, or user`);
       setLoadingVideo(false);
       return;
     }
     
-    console.log(`[Frame ${frame.id}] Setting up video: ${videoUrl}`);
+    console.log(`[Frame ${frame.id}] Setting up video with auth: ${videoUrl}`);
     setLoadingVideo(true);
     setVideoError(false);
     
@@ -85,26 +110,6 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
       setVideoLoaded(true);
       setLoadingVideo(false);
       setVideoError(false);
-      
-      // Try autoplay if the video has just loaded
-      if (video.paused) {
-        console.log(`[Frame ${frame.id}] Attempting autoplay`);
-        const playPromise = video.play();
-        
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              if (isMounted.current) {
-                console.log(`[Frame ${frame.id}] Autoplay succeeded`);
-                setIsPlaying(true);
-              }
-            })
-            .catch(err => {
-              console.log(`[Frame ${frame.id}] Autoplay prevented (expected): ${err.message}`);
-              // This is expected in many browsers, don't report as error
-            });
-        }
-      }
     };
     
     const handleLoadedMetadata = () => {
@@ -116,6 +121,7 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
       if (!isMounted.current) return;
       console.log(`[Frame ${frame.id}] Video data loaded: ${videoUrl}`);
       setVideoLoaded(true);
+      setLoadingVideo(false);
     };
     
     const handleError = (e: Event) => {
@@ -156,14 +162,6 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
       if (isMounted.current) {
         console.log(`[Frame ${frame.id}] Video ended`);
         setIsPlaying(false);
-        // Auto-restart after a brief pause
-        setTimeout(() => {
-          if (isMounted.current && videoRef.current) {
-            videoRef.current.play().catch(err => {
-              console.log(`[Frame ${frame.id}] Auto-restart prevented: ${err.message}`);
-            });
-          }
-        }, 1000);
       }
     };
     
@@ -178,6 +176,8 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
     
     // Force reload of video with latest URL
     try {
+      // Explicitly set src attribute - this is key for reloading after auth changes
+      video.src = videoUrl;
       video.load();
       console.log(`[Frame ${frame.id}] Video loading started: ${videoUrl}`);
     } catch (err) {
@@ -204,7 +204,7 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
         // Ignore errors on cleanup
       }
     };
-  }, [videoUrl, videoAttempts, frame.id, toast]);
+  }, [videoUrl, videoAttempts, frame.id, toast, user]);
 
   const handleLike = () => {
     toggleFrameLike(frame.id);
@@ -272,6 +272,9 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
     }
   };
 
+  // Don't render video if not authenticated
+  const shouldShowVideo = !!user && validateVideoUrl(frame.imageUrl);
+
   return (
     <div className="bg-white rounded-lg shadow-md border border-orange-100 p-4 mb-4 animate-fade-in">
       <div className="flex justify-between">
@@ -307,17 +310,19 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
                 <RefreshCw className="h-4 w-4" /> Retry Video
               </Button>
             </div>
-          ) : !validateVideoUrl(frame.imageUrl) ? (
+          ) : !shouldShowVideo ? (
             <div className="w-full bg-gray-100 rounded-lg p-6 text-center">
               <AlertCircle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
-              <p className="text-gray-700">No valid video available</p>
+              <p className="text-gray-700">
+                {!user ? "Sign in to view videos" : "No valid video available"}
+              </p>
             </div>
           ) : (
             <>
               <video 
                 ref={videoRef}
                 src={videoUrl} 
-                key={`video-${frame.id}-${videoAttempts}`}
+                key={`video-${frame.id}-${videoAttempts}-${user?.id || 'guest'}`}
                 className="w-full h-auto rounded-lg object-cover"
                 onClick={handleVideoClick}
                 controls

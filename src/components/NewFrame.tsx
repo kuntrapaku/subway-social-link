@@ -4,6 +4,7 @@ import { Image, Users, Calendar, Video, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Post } from "@/components/NewPost";
+import { useAuth } from "@/context/AuthContext";
 
 interface NewFrameProps {
   onFrameCreated?: (frame: Post) => void;
@@ -16,6 +17,12 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
   const [isVideoReady, setIsVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Log authentication state
+  useEffect(() => {
+    console.log("NewFrame - Auth state:", user ? "Logged in" : "Not logged in");
+  }, [user]);
 
   // Clean up any object URLs on unmount to prevent memory leaks
   useEffect(() => {
@@ -27,40 +34,66 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
     };
   }, [videoPreviewUrl]);
 
+  // Reset video state when user auth changes
+  useEffect(() => {
+    console.log("Auth state changed, resetting video state");
+    setIsVideoReady(false);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.removeAttribute('src');
+      videoRef.current.load();
+    }
+    
+    // Don't immediately reset videoPreviewUrl to avoid UI jumps
+    // But do recreate it if it exists
+    if (videoPreviewUrl && video) {
+      try {
+        console.log("Recreating video URL after auth change");
+        URL.revokeObjectURL(videoPreviewUrl);
+        const newVideoUrl = URL.createObjectURL(video);
+        setVideoPreviewUrl(newVideoUrl);
+      } catch (error) {
+        console.error("Error recreating video URL after auth change:", error);
+        setVideo(null);
+        setVideoPreviewUrl(null);
+      }
+    }
+  }, [user, video, videoPreviewUrl]);
+
   // Added effect to validate video playability
   useEffect(() => {
-    if (videoPreviewUrl && videoRef.current) {
-      console.log("Checking video playability for:", videoPreviewUrl);
-      const video = videoRef.current;
-      
-      const handleCanPlay = () => {
-        console.log("Video is playable:", videoPreviewUrl);
-        setIsVideoReady(true);
-      };
-      
-      const handleError = (e: Event) => {
-        console.error("Video cannot be played:", e);
-        setIsVideoReady(false);
-        toast({
-          title: "Video error",
-          description: "The selected video cannot be played. Please try another one.",
-          variant: "destructive",
-        });
-      };
-      
-      video.addEventListener('canplay', handleCanPlay);
-      video.addEventListener('error', handleError);
-      
-      // Force reload of video element
-      video.load();
-      
-      return () => {
-        video.removeEventListener('canplay', handleCanPlay);
-        video.removeEventListener('error', handleError);
-      };
-    } else {
-      setIsVideoReady(false);
+    if (!videoPreviewUrl || !videoRef.current) {
+      return;
     }
+    
+    console.log("Checking video playability for:", videoPreviewUrl);
+    const video = videoRef.current;
+    
+    const handleCanPlay = () => {
+      console.log("Video is playable:", videoPreviewUrl);
+      setIsVideoReady(true);
+    };
+    
+    const handleError = (e: Event) => {
+      console.error("Video cannot be played:", e);
+      setIsVideoReady(false);
+      toast({
+        title: "Video error",
+        description: "The selected video cannot be played. Please try another one.",
+        variant: "destructive",
+      });
+    };
+    
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('error', handleError);
+    
+    // Force reload of video element
+    video.load();
+    
+    return () => {
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('error', handleError);
+    };
   }, [videoPreviewUrl, toast]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -106,7 +139,7 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
     const newFrame: Post = {
       id: `frame-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       author: {
-        name: "You", // In a real app, this would come from authenticated user
+        name: user ? user.email?.split('@')[0] || "You" : "You",
         title: "Filmmaker"
       },
       timeAgo: "Just now",
@@ -187,6 +220,9 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
     }
   };
 
+  // Don't try to show video preview if user is not authenticated
+  const shouldShowVideoPreview = videoPreviewUrl && user;
+
   return (
     <div className="bg-white rounded-lg shadow-md border border-orange-100 p-4 mb-4">
       <form onSubmit={handleSubmit}>
@@ -205,7 +241,7 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
           />
         </div>
         
-        {videoPreviewUrl && (
+        {shouldShowVideoPreview && (
           <div className="mt-3 relative">
             <video 
               ref={videoRef}
@@ -214,7 +250,7 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
               controls
               playsInline
               muted
-              preload="auto"
+              preload="metadata"
               style={{ display: "block" }}
             />
             <div className={`absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 rounded-lg ${isVideoReady ? 'hidden' : ''}`}>

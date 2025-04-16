@@ -4,6 +4,7 @@ import { Heart, MessageCircle, Share2, MoreHorizontal, User, Play, Pause } from 
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { togglePostLike, addCommentToPost } from "@/utils/postsStorage";
+import { useAuth } from "@/context/AuthContext";
 
 interface PostCardProps {
   post: {
@@ -33,12 +34,14 @@ const PostCard = ({ post }: PostCardProps) => {
   const [videoLoaded, setVideoLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Debug log to check video URLs
   useEffect(() => {
     if (post.isVideo) {
       console.log("PostCard mounted with video post:", post);
       console.log("Video URL:", post.imageUrl);
+      console.log("Auth state:", user ? "Logged in" : "Not logged in");
     }
     
     // Clean up function
@@ -47,7 +50,21 @@ const PostCard = ({ post }: PostCardProps) => {
         videoRef.current.pause();
       }
     };
-  }, [post]);
+  }, [post, user]);
+
+  // Reset video state when auth changes
+  useEffect(() => {
+    if (post.isVideo && videoRef.current) {
+      console.log(`[Post ${post.id}] Auth changed, resetting video`);
+      setVideoLoaded(false);
+      setVideoError(false);
+      setIsPlaying(false);
+      
+      videoRef.current.pause();
+      videoRef.current.src = post.imageUrl || '';
+      videoRef.current.load();
+    }
+  }, [user, post.id, post.isVideo, post.imageUrl]);
 
   const handleLike = () => {
     togglePostLike(post.id);
@@ -134,6 +151,9 @@ const PostCard = ({ post }: PostCardProps) => {
 
   // Format media URL properly
   const mediaUrl = hasValidMedia ? post.imageUrl : '';
+  
+  // Don't show video if not authenticated
+  const shouldShowVideo = post.isVideo && !!user && hasValidMedia;
 
   return (
     <div className="bg-white rounded-lg shadow-md border border-orange-100 p-4 mb-4 animate-fade-in">
@@ -158,7 +178,11 @@ const PostCard = ({ post }: PostCardProps) => {
         {hasValidMedia && (
           <div className="mt-3 relative">
             {post.isVideo ? (
-              videoError ? (
+              !user ? (
+                <div className="w-full bg-gray-100 rounded-lg p-4 text-center">
+                  <p className="text-gray-500">Sign in to view videos</p>
+                </div>
+              ) : videoError ? (
                 <div className="w-full bg-gray-100 rounded-lg p-4 text-center">
                   <p className="text-gray-500">Video could not be loaded</p>
                 </div>
@@ -167,6 +191,7 @@ const PostCard = ({ post }: PostCardProps) => {
                   <video 
                     ref={videoRef}
                     src={mediaUrl} 
+                    key={`post-video-${post.id}-${user?.id || 'guest'}`}
                     className="w-full h-auto rounded-lg object-cover max-h-96"
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
@@ -174,9 +199,10 @@ const PostCard = ({ post }: PostCardProps) => {
                     onError={handleVideoError}
                     onLoadedData={handleVideoLoad}
                     preload="metadata"
-                    controls={isPlaying}
+                    controls
                     playsInline
                     loop
+                    muted
                   />
                   <Button
                     variant="secondary"
