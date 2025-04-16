@@ -36,16 +36,7 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
     try {
       setLoading(true)
       
-      // Check if user already exists
-      const { data: existingUsers, error: checkError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .maybeSingle()
-      
-      if (checkError) {
-        console.error('Error checking existing user:', checkError)
-      }
+      // Removed the check for existing users since the profiles table doesn't exist
       
       if (skipEmailConfirmation) {
         // First try to sign up the user
