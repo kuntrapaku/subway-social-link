@@ -9,7 +9,6 @@ const AuthCallback = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const location = useLocation();
-  const { toast: uiToast } = useToast();
 
   useEffect(() => {
     const handleAuthRedirect = async () => {
@@ -76,10 +75,11 @@ const AuthCallback = () => {
     );
   }
 
-  // On success, redirect to home
+  // On success, redirect to home with force refresh
   if (!error) {
     console.log("Auth callback completed, redirecting to home");
-    return <Navigate to="/" replace />;
+    window.location.href = "/";
+    return null;
   }
 
   // If there was an error, redirect to login

@@ -1,5 +1,6 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import AuthCallback from '@/pages/AuthCallback';
@@ -10,22 +11,83 @@ import Network from '@/pages/Network';
 import FilmIndustry from '@/pages/FilmIndustry';
 import NotFound from '@/pages/NotFound';
 import UserProfile from '@/pages/UserProfile';
+import { useAuth } from '@/context/AuthContext';
+import { AuthProvider } from '@/context/AuthContext';
+
+// ProtectedRoute component to handle authentication checks
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+function AppRoutes() {
+  const { user, isLoading } = useAuth();
+
+  return (
+    <Routes>
+      <Route path="/login" element={
+        user && !isLoading ? <Navigate to="/" replace /> : <Login />
+      } />
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/" element={
+        <ProtectedRoute>
+          <Index />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      } />
+      <Route path="/messages" element={
+        <ProtectedRoute>
+          <Messages />
+        </ProtectedRoute>
+      } />
+      <Route path="/notifications" element={
+        <ProtectedRoute>
+          <Notifications />
+        </ProtectedRoute>
+      } />
+      <Route path="/network" element={
+        <ProtectedRoute>
+          <Network />
+        </ProtectedRoute>
+      } />
+      <Route path="/film-industry" element={
+        <ProtectedRoute>
+          <FilmIndustry />
+        </ProtectedRoute>
+      } />
+      <Route path="/user/:userId" element={
+        <ProtectedRoute>
+          <UserProfile />
+        </ProtectedRoute>
+      } />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+}
 
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/messages" element={<Messages />} />
-        <Route path="/notifications" element={<Notifications />} />
-        <Route path="/network" element={<Network />} />
-        <Route path="/film-industry" element={<FilmIndustry />} />
-        <Route path="/user/:userId" element={<UserProfile />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </Router>
   );
 }

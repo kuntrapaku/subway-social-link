@@ -19,11 +19,17 @@ const Auth = () => {
     }
   }, [user, isLoading, navigate])
 
-  // Show nothing while checking authentication status
-  if (isLoading) return null
+  // Show loading indicator while checking authentication status
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-md mx-auto flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
 
   // If user is already authenticated, we'll be redirected by the effect above
-  if (user) return null
+  if (user) return null;
 
   return (
     <Card className="w-full max-w-md mx-auto shadow-lg border-orange-100">
