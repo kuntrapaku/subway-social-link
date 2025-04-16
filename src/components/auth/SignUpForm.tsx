@@ -38,7 +38,7 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
       
       if (skipEmailConfirmation) {
         // First try to sign up the user
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
         })
@@ -52,28 +52,24 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
         }
         
         // If signup successful, then sign in
-        if (signUpData.user) {
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          })
-          
-          if (signInError) {
-            console.error("Auto sign-in error:", signInError.message)
-            throw signInError
-          }
-          
-          toast({
-            title: "Account created",
-            description: "You've been automatically signed in!",
-          })
-          
-          navigate('/')
-        } else {
-          throw new Error('Failed to create account')
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        })
+        
+        if (signInError) {
+          console.error("Auto sign-in error:", signInError.message)
+          throw signInError
         }
+        
+        toast({
+          title: "Account created",
+          description: "You've been automatically signed in!",
+        })
+        
+        navigate('/')
       } else {
-        const { data, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {

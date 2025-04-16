@@ -1,4 +1,5 @@
 
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -9,12 +10,19 @@ import { getRedirectUrl } from './utils/authUtils'
 
 const Auth = () => {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth()
   
-  if (user) {
-    navigate('/')
-    return null
-  }
+  useEffect(() => {
+    if (user && !isLoading) {
+      navigate('/')
+    }
+  }, [user, isLoading, navigate])
+
+  // Show nothing while checking authentication status
+  if (isLoading) return null
+
+  // If user is already authenticated, we'll be redirected by the effect above
+  if (user) return null
 
   return (
     <Card className="w-full max-w-md mx-auto shadow-lg border-orange-100">
