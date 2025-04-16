@@ -1,396 +1,308 @@
+
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Users, UserPlus, Mail, Search, Check, X } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { User, Users, Clock, Check, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useLocation, useSearchParams } from "react-router-dom";
 import { 
   getPendingConnectionRequests, 
-  searchProfiles, 
-  sendConnectionRequest, 
-  acceptConnectionRequest, 
-  getUserConnections,
-  ConnectionRequest,
-  Profile
+  getUserConnections, 
+  getSuggestedProfiles,
+  acceptConnectionRequest,
+  Profile,
+  ConnectionRequest
 } from "@/utils/profileStorage";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 const Network = () => {
-  const { toast } = useToast();
   const { user } = useAuth();
-  const location = useLocation();
-  const [searchParams] = useSearchParams();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Profile[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  
-  const [pendingConnections, setPendingConnections] = useState<ConnectionRequest[]>([]);
+  const { toast: uiToast } = useToast();
   const [connections, setConnections] = useState<Profile[]>([]);
-  const [suggestions, setSuggestions] = useState<Profile[]>([]);
-  const [filteredConnections, setFilteredConnections] = useState<Profile[]>([]);
-  const [activeTab, setActiveTab] = useState("connections");
-
-  // Handle URL search parameters
-  useEffect(() => {
-    const urlSearchQuery = searchParams.get('search');
-    
-    if (urlSearchQuery) {
-      setSearchQuery(urlSearchQuery);
-      setActiveTab("search");
-      handleSearch(urlSearchQuery);
-    }
-  }, [searchParams]);
+  const [pendingRequests, setPendingRequests] = useState<ConnectionRequest[]>([]);
+  const [suggestedProfiles, setSuggestedProfiles] = useState<Profile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processingIds, setProcessingIds] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (user) {
-      // Load pending connection requests
-      const loadPendingRequests = async () => {
-        const requests = await getPendingConnectionRequests(user.id);
-        setPendingConnections(requests);
-      };
-
-      // Load connections
-      const loadConnections = async () => {
-        const userConnections = await getUserConnections(user.id);
+    const fetchNetworkData = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      try {
+        const [userConnections, pendingReqs, suggested] = await Promise.all([
+          getUserConnections(user.id),
+          getPendingConnectionRequests(user.id),
+          getSuggestedProfiles(user.id, 10)
+        ]);
+        
         setConnections(userConnections);
-        setFilteredConnections(userConnections);
-      };
-
-      loadPendingRequests();
-      loadConnections();
-    }
+        setPendingRequests(pendingReqs);
+        setSuggestedProfiles(suggested);
+      } catch (error) {
+        console.error("Error fetching network data:", error);
+        toast.error("Failed to load network data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchNetworkData();
+    
+    // Refresh when connections change
+    const handleConnectionsUpdate = () => {
+      fetchNetworkData();
+    };
+    
+    window.addEventListener("connections-updated", handleConnectionsUpdate);
+    
+    return () => {
+      window.removeEventListener("connections-updated", handleConnectionsUpdate);
+    };
   }, [user]);
 
-  useEffect(() => {
-    // Filter connections based on search query
-    if (connections.length > 0) {
-      const filtered = connections.filter(conn => 
-        conn.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        conn.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredConnections(filtered);
-    }
-  }, [searchQuery, connections]);
-
-  const handleSearch = async (query: string = searchQuery) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    setIsSearching(true);
+  const handleAcceptRequest = async (requestId: string) => {
+    if (!user) return;
+    
+    setProcessingIds(prev => ({ ...prev, [requestId]: true }));
     try {
-      const results = await searchProfiles(query);
+      const success = await acceptConnectionRequest(requestId);
       
-      // Filter out the current user and existing connections
-      const filteredResults = results.filter(profile => {
-        if (!user) return true;
-        if (profile.user_id === user.id) return false;
-        
-        // Check if already connected
-        return !connections.some(conn => conn.user_id === profile.user_id);
-      });
-      
-      setSearchResults(filteredResults);
+      if (success) {
+        // Update the local state
+        const request = pendingRequests.find(req => req.id === requestId);
+        if (request && request.sender) {
+          // Add the sender to connections
+          setConnections(prev => [...prev, request.sender!]);
+          
+          // Remove from pending requests
+          setPendingRequests(prev => prev.filter(req => req.id !== requestId));
+          
+          uiToast({
+            title: "Connection accepted",
+            description: `You are now connected with ${request.sender.name}`,
+          });
+          
+          // Dispatch event to update other components
+          window.dispatchEvent(new Event("connections-updated"));
+        }
+      } else {
+        uiToast({
+          title: "Failed to accept request",
+          description: "Please try again later",
+          variant: "destructive"
+        });
+      }
     } catch (error) {
-      console.error("Error searching profiles:", error);
-      toast({
-        title: "Search error",
-        description: "Failed to search for profiles. Please try again.",
+      console.error("Error accepting connection request:", error);
+      uiToast({
+        title: "Error",
+        description: "Failed to accept connection request",
         variant: "destructive"
       });
     } finally {
-      setIsSearching(false);
+      setProcessingIds(prev => ({ ...prev, [requestId]: false }));
     }
   };
 
-  const handleAcceptConnection = async (connection: ConnectionRequest) => {
-    if (!user) return;
+  const renderLoadingSkeleton = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {Array(6).fill(0).map((_, index) => (
+        <Card key={index}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-12 w-12 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
 
-    try {
-      const success = await acceptConnectionRequest(connection.id);
-      
-      if (success) {
-        // Remove from pending
-        setPendingConnections(prev => prev.filter(c => c.id !== connection.id));
-        
-        // Add to connections (refresh connections)
-        const userConnections = await getUserConnections(user.id);
-        setConnections(userConnections);
-        setFilteredConnections(userConnections);
-        
-        // Show success toast
-        toast({
-          title: "Connection accepted",
-          description: `You are now connected with ${connection.sender?.name || 'this user'}`,
-        });
-      } else {
-        throw new Error("Failed to accept connection");
-      }
-    } catch (error) {
-      console.error("Error accepting connection:", error);
-      toast({
-        title: "Error",
-        description: "Failed to accept connection request. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const handleIgnoreConnection = (connection: ConnectionRequest) => {
-    // Remove from pending
-    setPendingConnections(prev => prev.filter(c => c.id !== connection.id));
+  const renderConnection = (profile: Profile) => (
+    <Card key={profile.id} className="overflow-hidden">
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
+            <User className="h-6 w-6 text-orange-600" />
+          </div>
+          <div>
+            <h4 className="font-medium">{profile.name}</h4>
+            <p className="text-sm text-gray-500">{profile.title}</p>
+            <p className="text-xs text-gray-400 mt-1">{profile.location}</p>
+          </div>
+        </div>
+        <div className="mt-3 flex justify-end">
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="text-orange-600 border-orange-600 hover:bg-orange-50"
+          >
+            Message
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderPendingRequest = (request: ConnectionRequest) => {
+    if (!request.sender) return null;
     
-    // Show toast
-    toast({
-      title: "Connection ignored",
-      description: `Request from ${connection.sender?.name || 'this user'} has been ignored`,
-    });
-  };
-  
-  const handleConnect = async (profile: Profile) => {
-    if (!user) return;
-
-    try {
-      const success = await sendConnectionRequest(user, profile.user_id);
-      
-      if (success) {
-        // Remove from search results
-        setSearchResults(prev => prev.filter(p => p.user_id !== profile.user_id));
-        
-        // Show success toast
-        toast({
-          title: "Connection request sent",
-          description: `A connection request has been sent to ${profile.name}`,
-        });
-      } else {
-        throw new Error("Failed to send connection request");
-      }
-    } catch (error) {
-      console.error("Error sending connection request:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send connection request. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const handleRemoveConnection = (connectionId: string) => {
-    // Remove from connections
-    setConnections(prev => prev.filter(c => c.user_id !== connectionId));
-    setFilteredConnections(prev => prev.filter(c => c.user_id !== connectionId));
-    
-    // Show toast
-    toast({
-      title: "Connection removed",
-      description: "The connection has been removed from your network",
-    });
-  };
-  
-  const handleMessage = (connection: Profile) => {
-    // Show toast and we'd navigate to messages in a real app
-    toast({
-      title: "Message sent",
-      description: `Opening chat with ${connection.name}`,
-    });
+    return (
+      <Card key={request.id} className="overflow-hidden">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
+              <User className="h-6 w-6 text-orange-600" />
+            </div>
+            <div>
+              <h4 className="font-medium">{request.sender.name}</h4>
+              <p className="text-sm text-gray-500">{request.sender.title}</p>
+              <div className="flex items-center text-xs text-gray-400 mt-1">
+                <Clock className="h-3 w-3 mr-1" />
+                <span>
+                  Sent {new Date(request.created_at).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 flex justify-end space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-green-600 border-green-600 hover:bg-green-50"
+              onClick={() => handleAcceptRequest(request.id)}
+              disabled={processingIds[request.id]}
+            >
+              {processingIds[request.id] ? (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></span>
+              ) : (
+                <>
+                  <Check className="h-4 w-4 mr-1" />
+                  Accept
+                </>
+              )}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-red-600 border-red-600 hover:bg-red-50"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Decline
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-xl shadow-md border border-orange-100 p-6 mb-6">
-          <Tabs defaultValue="connections" value={activeTab} onValueChange={setActiveTab}>
-            <div className="flex justify-between items-center mb-4">
-              <h1 className="text-2xl font-bold text-gray-800">Film Artists</h1>
-              <TabsList className="bg-gray-100">
-                <TabsTrigger value="connections" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">
-                  <Users className="h-4 w-4 mr-1" />
-                  Connections
-                </TabsTrigger>
-                <TabsTrigger value="pending" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">
-                  <UserPlus className="h-4 w-4 mr-1" />
-                  Pending
-                </TabsTrigger>
-                <TabsTrigger value="search" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">
-                  <Search className="h-4 w-4 mr-1" />
-                  Search
-                </TabsTrigger>
-              </TabsList>
-            </div>
-            
-            <TabsContent value="connections" className="mt-0">
-              <div className="relative mb-6">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  className="subway-input pl-10 w-full border border-orange-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  placeholder="Search connections by name or title..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              
+      <div className="container mx-auto py-6 px-4">
+        <h1 className="text-2xl font-bold mb-6">Your Network</h1>
+        
+        <Tabs defaultValue="connections">
+          <TabsList className="mb-4">
+            <TabsTrigger value="connections" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-800">
+              <Users className="h-4 w-4 mr-2" />
+              Connections ({connections.length})
+            </TabsTrigger>
+            <TabsTrigger value="pending" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-800">
+              <Clock className="h-4 w-4 mr-2" />
+              Pending ({pendingRequests.length})
+            </TabsTrigger>
+            <TabsTrigger value="suggestions" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-800">
+              <User className="h-4 w-4 mr-2" />
+              Suggestions ({suggestedProfiles.length})
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="connections">
+            {loading ? (
+              renderLoadingSkeleton()
+            ) : connections.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredConnections.length > 0 ? (
-                  filteredConnections.map((connection) => (
-                    <div key={connection.user_id} className="flex items-start p-4 border border-orange-100 rounded-lg hover:bg-orange-50 transition-colors">
-                      <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center mr-3">
-                        <User className="h-6 w-6 text-orange-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium">{connection.name}</h4>
-                        <p className="text-sm text-gray-500">{connection.title}</p>
-                        <div className="mt-2 flex space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="text-xs border-orange-600 text-orange-600 hover:bg-orange-50"
-                            onClick={() => handleMessage(connection)}
-                          >
-                            <Mail className="h-3 w-3 mr-1" />
-                            Message
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 border-red-200"
-                            onClick={() => handleRemoveConnection(connection.user_id)}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="col-span-full text-center py-8 text-gray-500">
-                    <p>No connections found matching "{searchQuery}"</p>
-                  </div>
-                )}
+                {connections.map(renderConnection)}
               </div>
-            </TabsContent>
-            
-            <TabsContent value="pending" className="mt-0">
-              <h2 className="text-lg font-medium mb-4">Pending requests</h2>
-              <div className="space-y-4">
-                {pendingConnections.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <UserPlus className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                    <p>No pending requests</p>
-                  </div>
-                ) : (
-                  pendingConnections.map((connection) => (
-                    <div key={connection.id} className="flex items-start p-4 border border-orange-100 rounded-lg bg-orange-50">
-                      <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center mr-3">
-                        <User className="h-6 w-6 text-orange-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium">{connection.sender?.name || 'Unknown user'}</h4>
-                        <p className="text-sm text-gray-500">{connection.sender?.title || 'Film Professional'}</p>
-                        <div className="mt-3 flex space-x-2">
-                          <Button 
-                            className="bg-orange-600 hover:bg-orange-700 text-white"
-                            onClick={() => handleAcceptConnection(connection)}
-                          >
-                            <Check className="h-4 w-4 mr-1" />
-                            Accept
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            className="border-gray-300"
-                            onClick={() => handleIgnoreConnection(connection)}
-                          >
-                            <X className="h-4 w-4 mr-1" />
-                            Ignore
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
+            ) : (
+              <div className="text-center py-12">
+                <Users className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                <h3 className="text-xl font-medium mb-2">No connections yet</h3>
+                <p className="text-gray-500 mb-6">Start building your professional network by connecting with other film industry professionals</p>
+                <Button 
+                  onClick={() => document.querySelector('[data-value="suggestions"]')?.click()}
+                  className="bg-orange-600 hover:bg-orange-700"
+                >
+                  Explore Suggestions
+                </Button>
               </div>
-            </TabsContent>
-            
-            <TabsContent value="search" className="mt-0">
-              <div className="relative mb-6">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
-                </div>
-                <div className="flex">
-                  <input
-                    type="text"
-                    className="subway-input pl-10 flex-1 border border-orange-200 rounded-l-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Search people by name..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  />
-                  <Button 
-                    onClick={() => handleSearch()}
-                    className="rounded-l-none bg-orange-600 hover:bg-orange-700"
-                    disabled={isSearching || !searchQuery.trim()}
-                  >
-                    <Search className="h-4 w-4 mr-1" />
-                    Search
-                  </Button>
-                </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="pending">
+            {loading ? (
+              renderLoadingSkeleton()
+            ) : pendingRequests.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {pendingRequests.map(renderPendingRequest)}
               </div>
-              
-              {isSearching ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>Searching...</p>
-                </div>
-              ) : searchQuery && searchResults.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Search className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                  <p>No results found for "{searchQuery}"</p>
-                </div>
-              ) : (
-                <div>
-                  {searchResults.length > 0 && (
-                    <h3 className="text-lg font-medium mb-3">Search Results</h3>
-                  )}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {searchResults.map((profile) => (
-                      <div key={profile.user_id} className="flex items-start p-4 border border-orange-100 rounded-lg hover:bg-orange-50 transition-colors">
-                        <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center mr-3">
+            ) : (
+              <div className="text-center py-12">
+                <Clock className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                <h3 className="text-xl font-medium mb-2">No pending requests</h3>
+                <p className="text-gray-500">When someone sends you a connection request, it will appear here</p>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="suggestions">
+            {loading ? (
+              renderLoadingSkeleton()
+            ) : suggestedProfiles.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {suggestedProfiles.map(profile => (
+                  <Card key={profile.id} className="overflow-hidden">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
                           <User className="h-6 w-6 text-orange-600" />
                         </div>
-                        <div className="flex-1">
+                        <div>
                           <h4 className="font-medium">{profile.name}</h4>
                           <p className="text-sm text-gray-500">{profile.title}</p>
-                          <p className="text-xs text-gray-400">{profile.location}</p>
-                          <div className="mt-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="border-orange-600 text-orange-600 hover:bg-orange-50"
-                              onClick={() => handleConnect(profile)}
-                            >
-                              <UserPlus className="h-3 w-3 mr-1" />
-                              Connect
-                            </Button>
-                          </div>
+                          <p className="text-xs text-gray-400 mt-1">{profile.location}</p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {!searchQuery && (
-                <div className="text-center py-8 text-gray-500">
-                  <Search className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                  <p>Search for film professionals to connect with</p>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
+                      <div className="mt-3 flex justify-end">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="text-orange-600 border-orange-600 hover:bg-orange-50"
+                        >
+                          Connect
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <User className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                <h3 className="text-xl font-medium mb-2">No suggestions available</h3>
+                <p className="text-gray-500">We'll let you know when we find people you may know</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
