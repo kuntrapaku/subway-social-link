@@ -29,14 +29,15 @@ const PostCard = ({ post }: PostCardProps) => {
   const [commentText, setCommentText] = useState("");
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
 
   // Debug log to check video URLs
   useEffect(() => {
     if (post.isVideo) {
-      console.log("PostCard mounted with video URL:", post.imageUrl);
-      console.log("Post data:", post);
+      console.log("PostCard mounted with video post:", post);
+      console.log("Video URL:", post.imageUrl);
     }
     
     // Clean up function
@@ -99,6 +100,7 @@ const PostCard = ({ post }: PostCardProps) => {
         // Add error handling for play
         videoRef.current.play().catch(error => {
           console.error("Error playing video:", error);
+          setVideoError(true);
           toast({
             title: "Video playback error",
             description: "There was an issue playing this video. The URL may be invalid.",
@@ -113,6 +115,7 @@ const PostCard = ({ post }: PostCardProps) => {
   const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
     console.error("Video failed to load:", post.imageUrl);
     console.error("Video error event:", e);
+    setVideoError(true);
     toast({
       title: "Video error",
       description: "This video could not be loaded. The file may be missing or corrupted.",
@@ -122,6 +125,9 @@ const PostCard = ({ post }: PostCardProps) => {
 
   // Check if video URL exists and is valid
   const hasValidMedia = post.imageUrl && typeof post.imageUrl === 'string' && post.imageUrl.trim() !== '';
+
+  // Format media URL properly
+  const mediaUrl = hasValidMedia ? post.imageUrl : '';
 
   return (
     <div className="bg-white rounded-lg shadow-md border border-orange-100 p-4 mb-4 animate-fade-in">
@@ -146,34 +152,42 @@ const PostCard = ({ post }: PostCardProps) => {
         {hasValidMedia && (
           <div className="mt-3 relative">
             {post.isVideo ? (
-              <>
-                <video 
-                  ref={videoRef}
-                  src={post.imageUrl} 
-                  className="w-full h-auto rounded-lg object-cover max-h-96"
-                  onPlay={() => setIsPlaying(true)}
-                  onPause={() => setIsPlaying(false)}
-                  onEnded={() => setIsPlaying(false)}
-                  onError={handleVideoError}
-                  preload="metadata"
-                  controls={isPlaying}
-                />
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full h-12 w-12"
-                  onClick={togglePlay}
-                >
-                  {isPlaying ? (
-                    <Pause className="h-6 w-6" />
-                  ) : (
-                    <Play className="h-6 w-6" />
-                  )}
-                </Button>
-              </>
+              videoError ? (
+                <div className="w-full bg-gray-100 rounded-lg p-4 text-center">
+                  <p className="text-gray-500">Video could not be loaded</p>
+                </div>
+              ) : (
+                <>
+                  <video 
+                    ref={videoRef}
+                    src={mediaUrl} 
+                    className="w-full h-auto rounded-lg object-cover max-h-96"
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    onEnded={() => setIsPlaying(false)}
+                    onError={handleVideoError}
+                    preload="metadata"
+                    controls={isPlaying}
+                    playsInline
+                    muted
+                  />
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full h-12 w-12"
+                    onClick={togglePlay}
+                  >
+                    {isPlaying ? (
+                      <Pause className="h-6 w-6" />
+                    ) : (
+                      <Play className="h-6 w-6" />
+                    )}
+                  </Button>
+                </>
+              )
             ) : (
               <img 
-                src={post.imageUrl} 
+                src={mediaUrl} 
                 alt="Art" 
                 className="w-full h-auto rounded-lg object-cover max-h-96" 
                 onError={() => {
