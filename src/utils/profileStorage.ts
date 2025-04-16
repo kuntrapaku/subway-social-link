@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Database } from "@/integrations/supabase/types";
@@ -546,5 +545,39 @@ export const getSuggestedProfiles = async (userId: string, limit: number = 5): P
   } catch (error) {
     console.error("Error in getSuggestedProfiles:", error);
     return [];
+  }
+};
+
+// Add this new function for fetching a profile by ID
+export const getProfileById = async (userId: string): Promise<Profile | null> => {
+  try {
+    // Try Supabase first
+    try {
+      // Use type casting to bypass TypeScript errors with Supabase client
+      const { data, error } = await (supabase as any)
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data as Profile;
+    } catch (supabaseError) {
+      console.error("Supabase error, falling back to localStorage:", supabaseError);
+      
+      // Fallback to localStorage if Supabase fails
+      const profiles = getProfilesFromLocalStorage();
+      
+      // Find profile with matching user_id
+      const profile = Object.values(profiles).find(p => p.user_id === userId);
+      
+      return profile || null;
+    }
+  } catch (error) {
+    console.error("Error in getProfileById:", error);
+    return null;
   }
 };

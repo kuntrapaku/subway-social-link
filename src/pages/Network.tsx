@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,10 +16,12 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const Network = () => {
   const { user } = useAuth();
   const { toast: uiToast } = useToast();
+  const navigate = useNavigate();
   const [connections, setConnections] = useState<Profile[]>([]);
   const [pendingRequests, setPendingRequests] = useState<ConnectionRequest[]>([]);
   const [suggestedProfiles, setSuggestedProfiles] = useState<Profile[]>([]);
@@ -52,7 +53,6 @@ const Network = () => {
     
     fetchNetworkData();
     
-    // Refresh when connections change
     const handleConnectionsUpdate = () => {
       fetchNetworkData();
     };
@@ -72,21 +72,14 @@ const Network = () => {
       const success = await acceptConnectionRequest(requestId);
       
       if (success) {
-        // Update the local state
         const request = pendingRequests.find(req => req.id === requestId);
         if (request && request.sender) {
-          // Add the sender to connections
           setConnections(prev => [...prev, request.sender!]);
-          
-          // Remove from pending requests
           setPendingRequests(prev => prev.filter(req => req.id !== requestId));
-          
           uiToast({
             title: "Connection accepted",
             description: `You are now connected with ${request.sender.name}`,
           });
-          
-          // Dispatch event to update other components
           window.dispatchEvent(new Event("connections-updated"));
         }
       } else {
@@ -108,6 +101,10 @@ const Network = () => {
     }
   };
 
+  const navigateToUserProfile = (userId: string) => {
+    navigate(`/user/${userId}`);
+  };
+
   const renderLoadingSkeleton = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {Array(6).fill(0).map((_, index) => (
@@ -127,7 +124,11 @@ const Network = () => {
   );
 
   const renderConnection = (profile: Profile) => (
-    <Card key={profile.id} className="overflow-hidden">
+    <Card 
+      key={profile.id} 
+      className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+      onClick={() => navigateToUserProfile(profile.user_id)}
+    >
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
@@ -144,6 +145,10 @@ const Network = () => {
             variant="outline" 
             size="sm"
             className="text-orange-600 border-orange-600 hover:bg-orange-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/messages?userId=${profile.user_id}`);
+            }}
           >
             Message
           </Button>
@@ -156,7 +161,11 @@ const Network = () => {
     if (!request.sender) return null;
     
     return (
-      <Card key={request.id} className="overflow-hidden">
+      <Card 
+        key={request.id} 
+        className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+        onClick={() => navigateToUserProfile(request.sender?.user_id || "")}
+      >
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
@@ -178,7 +187,10 @@ const Network = () => {
               variant="outline" 
               size="sm"
               className="text-green-600 border-green-600 hover:bg-green-50"
-              onClick={() => handleAcceptRequest(request.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAcceptRequest(request.id);
+              }}
               disabled={processingIds[request.id]}
             >
               {processingIds[request.id] ? (
@@ -194,6 +206,7 @@ const Network = () => {
               variant="outline" 
               size="sm"
               className="text-red-600 border-red-600 hover:bg-red-50"
+              onClick={(e) => e.stopPropagation()}
             >
               <X className="h-4 w-4 mr-1" />
               Decline
@@ -239,7 +252,6 @@ const Network = () => {
                 <p className="text-gray-500 mb-6">Start building your professional network by connecting with other film industry professionals</p>
                 <Button 
                   onClick={() => {
-                    // Fixed the element.click() error by using proper type assertion
                     const tabElement = document.querySelector('[data-value="suggestions"]');
                     if (tabElement instanceof HTMLElement) {
                       tabElement.click();
@@ -275,7 +287,11 @@ const Network = () => {
             ) : suggestedProfiles.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {suggestedProfiles.map(profile => (
-                  <Card key={profile.id} className="overflow-hidden">
+                  <Card 
+                    key={profile.id} 
+                    className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => navigateToUserProfile(profile.user_id)}
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
@@ -292,6 +308,7 @@ const Network = () => {
                           variant="outline" 
                           size="sm"
                           className="text-orange-600 border-orange-600 hover:bg-orange-50"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           Connect
                         </Button>
