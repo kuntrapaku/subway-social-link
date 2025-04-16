@@ -1,5 +1,9 @@
 
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
+
 export interface Profile {
+  id: string;
   name: string;
   title: string;
   location: string;
@@ -8,54 +12,91 @@ export interface Profile {
   joinDate: string;
   website: string;
   bio: string;
+  user_id: string;
 }
 
-// Default profile
-const defaultProfile: Profile = {
-  name: "Surendra Kuntrapaku",
-  title: "Moviemaker",
+// Default profile factory function that takes a user_id
+const createDefaultProfile = (userId: string): Profile => ({
+  id: userId,
+  name: "New User",
+  title: "Film Professional",
   location: "Mumbai, India",
-  connections: 367,
-  company: "24 Frames",
-  joinDate: "January 2022",
-  website: "24frames.in",
-  bio: "Passionate moviemaker with experience in directing and cinematography. Always looking to connect with creative professionals in the Indian film industry."
-};
+  connections: 0,
+  company: "",
+  joinDate: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+  website: "",
+  bio: "Tell others about your experience in the film industry.",
+  user_id: userId
+});
 
-// Key for localStorage
-const PROFILE_STORAGE_KEY = "subway_app_profile";
-
-// Get profile from localStorage
-export const getProfile = (): Profile => {
+// Get profile from Supabase or return a default profile
+export const getProfile = async (user: User | null): Promise<Profile> => {
+  if (!user) {
+    return createDefaultProfile("anonymous");
+  }
+  
   try {
-    const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
-    return storedProfile ? JSON.parse(storedProfile) : defaultProfile;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (error) {
+      console.error("Error fetching profile:", error);
+      // If no profile exists, create a default one for this user
+      return createDefaultProfile(user.id);
+    }
+    
+    return data as Profile;
   } catch (error) {
-    console.error("Error retrieving profile from localStorage:", error);
-    return defaultProfile;
+    console.error("Error in getProfile:", error);
+    return createDefaultProfile(user.id);
   }
 };
 
-// Save profile to localStorage
-export const saveProfile = (profile: Profile): void => {
+// Save profile to Supabase
+export const saveProfile = async (profile: Profile): Promise<void> => {
   try {
-    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+    const { error } = await supabase
+      .from('profiles')
+      .upsert(profile, { onConflict: 'user_id' });
+    
+    if (error) {
+      console.error("Error saving profile to Supabase:", error);
+      return;
+    }
+    
     // Dispatch a custom event to notify other components about the profile update
     window.dispatchEvent(new Event("profile-updated"));
   } catch (error) {
-    console.error("Error saving profile to localStorage:", error);
+    console.error("Error in saveProfile:", error);
   }
 };
 
 // Update profile
-export const updateProfile = (updatedProfile: Partial<Profile>): Profile => {
+export const updateProfile = async (
+  user: User | null, 
+  updatedProfile: Partial<Profile>
+): Promise<Profile> => {
+  if (!user) {
+    console.error("Cannot update profile: No authenticated user");
+    return createDefaultProfile("anonymous");
+  }
+  
   try {
-    const currentProfile = getProfile();
+    // Get the current profile first
+    const currentProfile = await getProfile(user);
+    
+    // Merge the current profile with updates
     const newProfile = { ...currentProfile, ...updatedProfile };
-    saveProfile(newProfile);
+    
+    // Save the updated profile
+    await saveProfile(newProfile);
+    
     return newProfile;
   } catch (error) {
-    console.error("Error updating profile in localStorage:", error);
-    return getProfile();
+    console.error("Error updating profile:", error);
+    return createDefaultProfile(user.id);
   }
 };

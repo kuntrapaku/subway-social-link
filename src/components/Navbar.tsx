@@ -1,6 +1,7 @@
+
 import { Link, useNavigate } from "react-router-dom";
 import { Home, Users, Bell, MessageSquare, User, Menu, Search, LogOut, Settings, HelpCircle, Moon, Film, Send } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { 
@@ -12,11 +13,39 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { getProfile, Profile } from "@/utils/profileStorage";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user) {
+        try {
+          const profile = await getProfile(user);
+          setUserProfile(profile);
+        } catch (error) {
+          console.error("Error fetching user profile for navbar:", error);
+        }
+      }
+    };
+
+    fetchUserProfile();
+
+    // Listen for profile updates
+    const handleProfileUpdate = () => {
+      fetchUserProfile();
+    };
+    
+    window.addEventListener("profile-updated", handleProfileUpdate);
+    
+    return () => {
+      window.removeEventListener("profile-updated", handleProfileUpdate);
+    };
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -88,8 +117,10 @@ const Navbar = () => {
                       <User className="h-6 w-6 text-orange-600" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-medium">Surendra Kuntrapaku</span>
-                      <span className="text-sm text-gray-500">View your profile</span>
+                      <span className="font-medium">{userProfile?.name || "Loading..."}</span>
+                      <Link to="/profile" className="text-sm text-gray-500 hover:text-orange-500">
+                        View your profile
+                      </Link>
                     </div>
                   </div>
                   
@@ -209,8 +240,8 @@ const Navbar = () => {
                   </div>
                 </div>
                 <div className="ml-3">
-                  <div className="text-base font-medium text-gray-800">Surendra Kuntrapaku</div>
-                  <div className="text-sm font-medium text-gray-500">surendra@24frames.in</div>
+                  <div className="text-base font-medium text-gray-800">{userProfile?.name || "Loading..."}</div>
+                  <div className="text-sm font-medium text-gray-500">{user.email}</div>
                 </div>
               </div>
               <div className="mt-3 space-y-1 px-2">

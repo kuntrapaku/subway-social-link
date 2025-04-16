@@ -3,22 +3,41 @@ import { User, MapPin, Briefcase, Calendar, Link, Users, MessageSquare } from "l
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { EditProfileDialog } from "./EditProfileDialog";
-import { getProfile, saveProfile, Profile as ProfileType } from "@/utils/profileStorage";
+import { getProfile, saveProfile, updateProfile, Profile as ProfileType } from "@/utils/profileStorage";
+import { useAuth } from "@/context/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProfileCardProps {
   isCurrentUser?: boolean;
+  userId?: string;
 }
 
-const ProfileCard = ({ isCurrentUser = false }: ProfileCardProps) => {
-  const [profile, setProfile] = useState<ProfileType>(getProfile());
+const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<ProfileType | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load profile on component mount
-    setProfile(getProfile());
+    // Load profile when component mounts or when user changes
+    const fetchProfile = async () => {
+      setLoading(true);
+      try {
+        // If userId is provided and it's not the current user, we would fetch that user's profile
+        // For now, we're only handling the current user's profile
+        const profileData = await getProfile(user);
+        setProfile(profileData);
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    // Add event listener to refresh profile when localStorage changes
+    fetchProfile();
+    
+    // Add event listener to refresh profile when it's updated
     const handleProfileUpdate = () => {
-      setProfile(getProfile());
+      fetchProfile();
     };
     
     window.addEventListener("profile-updated", handleProfileUpdate);
@@ -27,16 +46,26 @@ const ProfileCard = ({ isCurrentUser = false }: ProfileCardProps) => {
     return () => {
       window.removeEventListener("profile-updated", handleProfileUpdate);
     };
-  }, []);
+  }, [user, userId]);
 
-  const handleSaveProfile = (updatedProfile: Omit<ProfileType, 'connections' | 'joinDate'>) => {
-    const newProfile = {
-      ...profile,
-      ...updatedProfile
-    };
-    saveProfile(newProfile);
-    setProfile(newProfile);
+  const handleSaveProfile = async (updatedProfile: Omit<ProfileType, 'connections' | 'joinDate' | 'id' | 'user_id'>) => {
+    if (!user || !profile) return;
+    
+    try {
+      const newProfile = await updateProfile(user, updatedProfile);
+      setProfile(newProfile);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    }
   };
+
+  if (loading) {
+    return <ProfileCardSkeleton />;
+  }
+
+  if (!profile) {
+    return <div className="subway-card">Profile not found</div>;
+  }
 
   return (
     <div className="subway-card animate-fade-in">
@@ -107,7 +136,7 @@ const ProfileCard = ({ isCurrentUser = false }: ProfileCardProps) => {
           <div className="flex items-center text-sm">
             <Link className="h-4 w-4 mr-2 text-gray-500" />
             <a href={`https://${profile.website}`} className="text-orange-600 hover:underline">
-              {profile.website}
+              {profile.website || "Not specified"}
             </a>
           </div>
         </div>
@@ -119,5 +148,31 @@ const ProfileCard = ({ isCurrentUser = false }: ProfileCardProps) => {
     </div>
   );
 };
+
+// Loading skeleton for the profile card
+const ProfileCardSkeleton = () => (
+  <div className="subway-card">
+    <div className="relative">
+      <div className="h-32 bg-gray-200 rounded-t-lg"></div>
+      <div className="absolute -bottom-12 left-4">
+        <div className="h-24 w-24 rounded-full bg-white p-1">
+          <Skeleton className="h-full w-full rounded-full" />
+        </div>
+      </div>
+    </div>
+    <div className="mt-14 px-2 space-y-4">
+      <div>
+        <Skeleton className="h-6 w-32 mb-2" />
+        <Skeleton className="h-4 w-24 mb-2" />
+        <Skeleton className="h-4 w-28" />
+      </div>
+      <div>
+        <Skeleton className="h-4 w-full mb-2" />
+        <Skeleton className="h-4 w-full mb-2" />
+        <Skeleton className="h-4 w-3/4" />
+      </div>
+    </div>
+  </div>
+);
 
 export default ProfileCard;
