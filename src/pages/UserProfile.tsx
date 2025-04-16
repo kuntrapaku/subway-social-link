@@ -1,11 +1,14 @@
+
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/context/AuthContext";
 import { getProfileById, Profile } from "@/utils/profiles";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { User, MapPin, Briefcase, Calendar, Link, Users, MessageSquare } from "lucide-react";
+import { User, MapPin, Briefcase, Calendar, Link as LinkIcon, Users, MessageSquare, ArrowLeft } from "lucide-react";
+import ProfileCard from "@/components/ProfileCard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const UserProfile = () => {
   const { userId } = useParams();
@@ -117,15 +120,15 @@ const UserProfile = () => {
               <Tabs defaultValue="posts">
                 <TabsList className="grid grid-cols-4 mb-4">
                   <TabsTrigger value="posts" className="data-[state=active]:text-subway-600 data-[state=active]:border-b-2 data-[state=active]:border-subway-600">
-                    <Newspaper className="h-4 w-4 mr-1" />
+                    <MessageSquare className="h-4 w-4 mr-1" />
                     <span>Posts</span>
                   </TabsTrigger>
                   <TabsTrigger value="photos" className="data-[state=active]:text-subway-600 data-[state=active]:border-b-2 data-[state=active]:border-subway-600">
-                    <Image className="h-4 w-4 mr-1" />
+                    <User className="h-4 w-4 mr-1" />
                     <span>Photos</span>
                   </TabsTrigger>
                   <TabsTrigger value="videos" className="data-[state=active]:text-subway-600 data-[state=active]:border-b-2 data-[state=active]:border-subway-600">
-                    <Video className="h-4 w-4 mr-1" />
+                    <Film className="h-4 w-4 mr-1" />
                     <span>Videos</span>
                   </TabsTrigger>
                   <TabsTrigger value="connections" className="data-[state=active]:text-subway-600 data-[state=active]:border-b-2 data-[state=active]:border-subway-600">
@@ -136,21 +139,21 @@ const UserProfile = () => {
                 
                 <TabsContent value="posts" className="mt-0">
                   <div className="text-center py-8 text-gray-500">
-                    <Newspaper className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                    <MessageSquare className="h-12 w-12 mx-auto text-gray-400 mb-3" />
                     <p>No posts to display yet</p>
                   </div>
                 </TabsContent>
                 
                 <TabsContent value="photos" className="mt-0">
                   <div className="text-center py-8 text-gray-500">
-                    <Image className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                    <User className="h-12 w-12 mx-auto text-gray-400 mb-3" />
                     <p>No photos to display yet</p>
                   </div>
                 </TabsContent>
                 
                 <TabsContent value="videos" className="mt-0">
                   <div className="text-center py-8 text-gray-500">
-                    <Video className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                    <Film className="h-12 w-12 mx-auto text-gray-400 mb-3" />
                     <p>No videos to display yet</p>
                   </div>
                 </TabsContent>

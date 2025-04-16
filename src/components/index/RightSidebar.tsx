@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import TrendingTopics from "./TrendingTopics";
@@ -6,8 +5,8 @@ import CreativeDepartments from "./CreativeDepartments";
 import UpcomingEvents from "./UpcomingEvents";
 import SuggestedConnections from "@/components/SuggestedConnections";
 import { useAuth } from "@/context/AuthContext";
-import { getSuggestedProfiles } from "@/utils/profileStorage";
-import { Profile } from "@/utils/profileStorage";
+import { getSuggestedProfiles } from "@/utils/profiles";
+import { Profile } from "@/utils/profiles";
 
 const RightSidebar = () => {
   const { user } = useAuth();
