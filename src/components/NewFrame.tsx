@@ -39,10 +39,11 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
     if (!videoPreviewUrl && video) {
       // Make sure the URL is created if the file exists
       const newVideoUrl = URL.createObjectURL(video);
+      console.log("Created new video URL in submit handler:", newVideoUrl);
       setVideoPreviewUrl(newVideoUrl);
       
       // If videoPreviewUrl wasn't set yet, wait a moment and then create the frame
-      setTimeout(() => createFrame(newVideoUrl), 100);
+      setTimeout(() => createFrame(newVideoUrl), 300);
       return;
     }
     
@@ -61,6 +62,10 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
       return;
     }
     
+    if (videoUrl) {
+      console.log("Creating frame with valid video URL:", videoUrl);
+    }
+    
     // Create a new frame object
     const newFrame: Post = {
       id: Date.now().toString(), // Generate a unique ID based on timestamp
@@ -76,8 +81,6 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
       isLiked: false,
       isVideo: true
     };
-    
-    console.log("Creating new frame with video URL:", videoUrl);
     
     // Call the callback to add the frame to the timeline
     if (onFrameCreated) {
@@ -102,6 +105,9 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedVideo = e.target.files[0];
+      
+      console.log("Video selected:", selectedVideo.name, "Size:", selectedVideo.size);
+      
       setVideo(selectedVideo);
       
       // Clean up any previous URL
@@ -111,9 +117,13 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
       
       // Create video preview URL
       const videoUrl = URL.createObjectURL(selectedVideo);
+      console.log("Created new video URL:", videoUrl);
       setVideoPreviewUrl(videoUrl);
       
-      console.log("Video selected, created URL:", videoUrl);
+      toast({
+        title: "Video selected",
+        description: "Your video has been selected. Click Share Frame to post.",
+      });
     }
   };
 
@@ -149,6 +159,9 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
               src={videoPreviewUrl}
               className="w-full h-auto rounded-lg object-cover max-h-60"
               controls
+              preload="auto"
+              playsInline
+              muted
             />
             <Button 
               variant="destructive"

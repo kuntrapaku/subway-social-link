@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect } from "react";
-import { Heart, MessageCircle, Share2, MoreHorizontal, User, Play, Pause } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, User, Play, Pause, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { toggleFrameLike, addCommentToFrame } from "@/utils/postsStorage";
@@ -15,45 +15,58 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
   const [likeCount, setLikeCount] = useState(frame.likes);
   const [commentCount, setCommentCount] = useState(frame.comments);
   const [isPlaying, setIsPlaying] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const { toast } = useToast();
   const [videoError, setVideoError] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoAttempts, setVideoAttempts] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const { toast } = useToast();
 
-  // Debug logs to track video URL and component lifecycle
+  // Extensive debugging for video URLs and component lifecycle
   useEffect(() => {
-    console.log("PlayableFrameCard mounted with frame:", frame);
-    console.log("Video URL:", frame.imageUrl);
+    console.log("PlayableFrameCard mounted, frame ID:", frame.id);
+    console.log("Video URL type:", typeof frame.imageUrl);
+    console.log("Video URL value:", frame.imageUrl);
+    console.log("Is video flag:", frame.isVideo);
     
-    // Clean up function that runs when component unmounts
     return () => {
-      console.log("PlayableFrameCard unmounting");
+      console.log("PlayableFrameCard unmounting for frame ID:", frame.id);
       if (videoRef.current) {
         videoRef.current.pause();
       }
     };
   }, [frame]);
 
-  // Additional effect to automatically try playing the video on mount
+  // Force video reload when component mounts or when retry is attempted
   useEffect(() => {
-    // Only attempt to play if video is valid and ref is ready
     if (videoRef.current && !videoError && hasValidVideo) {
-      console.log("Attempting to auto-play video");
-      const playPromise = videoRef.current.play();
+      // Reset video element
+      videoRef.current.load();
       
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            console.log("Auto-play successful");
-            setIsPlaying(true);
-          })
-          .catch(error => {
-            console.error("Auto-play prevented:", error);
-            // Don't set error state here - just log the auto-play prevention
-          });
-      }
+      // Add a short delay before attempting to play
+      const timer = setTimeout(() => {
+        console.log(`Attempt ${videoAttempts + 1}: Trying to play video:`, frame.imageUrl);
+        
+        if (videoRef.current) {
+          const playPromise = videoRef.current.play();
+          
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                console.log("Video play successful for frame ID:", frame.id);
+                setIsPlaying(true);
+                setVideoLoaded(true);
+              })
+              .catch(error => {
+                console.error("Video play prevented:", error);
+                // Don't set error yet, just log the issue
+              });
+          }
+        }
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [videoLoaded, videoError]);
+  }, [frame, videoAttempts, videoError]);
 
   const handleLike = () => {
     toggleFrameLike(frame.id);
@@ -77,8 +90,7 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
         videoRef.current.pause();
         setIsPlaying(false);
       } else {
-        console.log("Attempting to play video");
-        // Add error handling for play
+        console.log("Manual play attempt for frame ID:", frame.id);
         videoRef.current.play().catch(error => {
           console.error("Error playing video:", error);
           setVideoError(true);
@@ -93,32 +105,46 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
     }
   };
 
-  const handleVideoStateChange = () => {
+  const retryVideo = () => {
+    console.log("Retrying video for frame ID:", frame.id);
+    setVideoError(false);
+    setVideoLoaded(false);
+    setVideoAttempts(prev => prev + 1);
+    
+    // Force video element to reload
     if (videoRef.current) {
-      setIsPlaying(!videoRef.current.paused);
+      videoRef.current.load();
     }
+    
+    toast({
+      title: "Retrying video",
+      description: "Attempting to reload the video..."
+    });
   };
 
   const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
     console.error("Video failed to load:", frame.imageUrl);
-    console.error("Video error event:", e);
+    console.error("Video error event details:", e.currentTarget.error);
     setVideoError(true);
-    toast({
-      title: "Video error",
-      description: "This video could not be loaded. The file may be missing or corrupted.",
-      variant: "destructive"
-    });
+    setVideoLoaded(false);
   };
 
   const handleVideoLoad = () => {
     console.log("Video loaded successfully:", frame.imageUrl);
     setVideoLoaded(true);
+    setVideoError(false);
   };
 
-  // Check if video URL exists and is valid
-  const hasValidVideo = frame.imageUrl && typeof frame.imageUrl === 'string' && frame.imageUrl.trim() !== '';
+  // More robust URL validation
+  const hasValidVideo = Boolean(
+    frame.imageUrl && 
+    typeof frame.imageUrl === 'string' && 
+    frame.imageUrl.trim() !== '' &&
+    !frame.imageUrl.includes('undefined') &&
+    !frame.imageUrl.includes('null')
+  );
 
-  // Format video URL properly
+  // Safely format video URL
   const videoUrl = hasValidVideo ? frame.imageUrl : '';
 
   return (
@@ -149,17 +175,10 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="mt-2"
-                  onClick={() => {
-                    setVideoError(false);
-                    setVideoLoaded(false);
-                    // Force video element to reload
-                    if (videoRef.current) {
-                      videoRef.current.load();
-                    }
-                  }}
+                  className="mt-2 flex items-center gap-1"
+                  onClick={retryVideo}
                 >
-                  Retry
+                  <RefreshCw className="h-4 w-4" /> Retry Video
                 </Button>
               </div>
             ) : (
@@ -173,24 +192,22 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
                   onEnded={() => setIsPlaying(false)}
                   onError={handleVideoError}
                   onLoadedData={handleVideoLoad}
-                  preload="auto" 
-                  controls={isPlaying}
+                  preload="auto"
+                  controls
                   playsInline
                   loop
-                  autoPlay={false}
+                  muted
                 />
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full h-12 w-12"
-                  onClick={togglePlay}
-                >
-                  {isPlaying ? (
-                    <Pause className="h-6 w-6" />
-                  ) : (
+                {!isPlaying && (
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full h-12 w-12"
+                    onClick={togglePlay}
+                  >
                     <Play className="h-6 w-6" />
-                  )}
-                </Button>
+                  </Button>
+                )}
               </>
             )}
           </div>
