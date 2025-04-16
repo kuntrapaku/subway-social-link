@@ -75,7 +75,8 @@ export const getProfile = async (user: User | null): Promise<Profile> => {
   try {
     // Try to get profile from Supabase first
     try {
-      // @ts-ignore - Using any type to bypass type checking for Supabase
+      // Use type assertion to bypass TypeScript errors
+      // @ts-ignore - Using type assertion to bypass type checking for Supabase
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -115,7 +116,7 @@ export const saveProfile = async (profile: Profile): Promise<void> => {
   try {
     // Try Supabase first
     try {
-      // @ts-ignore - Using any type to bypass type checking for Supabase
+      // @ts-ignore - Using type assertion to bypass type checking for Supabase
       const { error } = await supabase
         .from('profiles')
         .upsert(profile, { onConflict: 'user_id' });
@@ -175,7 +176,7 @@ export const searchProfiles = async (query: string): Promise<Profile[]> => {
   try {
     // Try Supabase first
     try {
-      // @ts-ignore - Using any type to bypass type checking for Supabase
+      // @ts-ignore - Using type assertion to bypass type checking for Supabase
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -227,7 +228,7 @@ export const sendConnectionRequest = async (
     
     // Try Supabase first
     try {
-      // @ts-ignore - Using any type to bypass type checking for Supabase
+      // @ts-ignore - Using type assertion to bypass type checking for Supabase
       const { error } = await supabase
         .from('connection_requests')
         .insert(newRequest);
@@ -267,7 +268,7 @@ export const getPendingConnectionRequests = async (userId: string): Promise<Conn
   try {
     // Try Supabase first
     try {
-      // @ts-ignore - Using any type to bypass type checking for Supabase
+      // @ts-ignore - Using type assertion to bypass type checking for Supabase
       const { data, error } = await supabase
         .from('connection_requests')
         .select('*, sender:profiles!sender_id(*)')
@@ -308,7 +309,7 @@ export const acceptConnectionRequest = async (requestId: string): Promise<boolea
   try {
     // Try Supabase first
     try {
-      // @ts-ignore - Using any type to bypass type checking for Supabase
+      // @ts-ignore - Using type assertion to bypass type checking for Supabase
       const { error } = await supabase
         .from('connection_requests')
         .update({ status: 'accepted' })
@@ -359,7 +360,7 @@ export const getUserConnections = async (userId: string): Promise<Profile[]> => 
   try {
     // Try Supabase first
     try {
-      // @ts-ignore - Using any type to bypass type checking for Supabase
+      // @ts-ignore - Using type assertion to bypass type checking for Supabase
       const { data, error } = await supabase
         .from('connection_requests')
         .select('*, sender:profiles!sender_id(*), receiver:profiles!receiver_id(*)')
