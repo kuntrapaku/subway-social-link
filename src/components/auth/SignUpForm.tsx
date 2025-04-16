@@ -36,8 +36,6 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
     try {
       setLoading(true)
       
-      // Removed the check for existing users since the profiles table doesn't exist
-      
       if (skipEmailConfirmation) {
         // First try to sign up the user
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -46,6 +44,7 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
         })
         
         if (signUpError) {
+          console.error("Sign up error:", signUpError.message)
           if (signUpError.message.includes('already registered')) {
             throw new Error('This email is already registered. Please use a different email or try signing in.')
           }
@@ -59,7 +58,10 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
             password,
           })
           
-          if (signInError) throw signInError
+          if (signInError) {
+            console.error("Auto sign-in error:", signInError.message)
+            throw signInError
+          }
           
           toast({
             title: "Account created",
@@ -80,6 +82,7 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
         })
 
         if (error) {
+          console.error("Sign up with email confirmation error:", error.message)
           if (error.message.includes('already registered')) {
             throw new Error('This email is already registered. Please use a different email or try signing in.')
           }
@@ -92,6 +95,7 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
         })
       }
     } catch (error: any) {
+      console.error("Signup error:", error.message)
       setErrorMessage(error.message)
       toast({
         title: "Error",

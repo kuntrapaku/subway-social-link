@@ -17,10 +17,10 @@ const Auth = () => {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto shadow-lg border-orange-100">
       <CardHeader>
-        <CardTitle>Welcome to Movcon</CardTitle>
-        <CardDescription>Connect with film industry professionals</CardDescription>
+        <CardTitle className="text-xl text-orange-600">Welcome to MovConnect</CardTitle>
+        <CardDescription>Connect with film industry professionals and grow your network</CardDescription>
       </CardHeader>
       <Tabs defaultValue="signin">
         <TabsList className="grid w-full grid-cols-2">
