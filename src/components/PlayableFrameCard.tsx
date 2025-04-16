@@ -1,5 +1,5 @@
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Heart, MessageCircle, Share2, MoreHorizontal, User, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +17,11 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
+
+  // Check if the video URL is valid when component mounts
+  useEffect(() => {
+    console.log("Video URL in PlayableFrameCard:", frame.imageUrl);
+  }, [frame.imageUrl]);
 
   const handleLike = () => {
     toggleFrameLike(frame.id);
@@ -38,10 +43,19 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
+        setIsPlaying(false);
       } else {
-        videoRef.current.play();
+        // Add error handling for play
+        videoRef.current.play().catch(error => {
+          console.error("Error playing video:", error);
+          toast({
+            title: "Video playback error",
+            description: "There was an issue playing this video. The URL may be invalid.",
+            variant: "destructive"
+          });
+        });
+        setIsPlaying(true);
       }
-      setIsPlaying(!isPlaying);
     }
   };
 
@@ -49,6 +63,15 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
     if (videoRef.current) {
       setIsPlaying(!videoRef.current.paused);
     }
+  };
+
+  const handleVideoError = () => {
+    console.error("Video failed to load:", frame.imageUrl);
+    toast({
+      title: "Video error",
+      description: "This video could not be loaded. The file may be missing or corrupted.",
+      variant: "destructive"
+    });
   };
 
   const handleShare = () => {
@@ -87,6 +110,7 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
               onPlay={() => setIsPlaying(true)}
               onPause={() => setIsPlaying(false)}
               onEnded={() => setIsPlaying(false)}
+              onError={handleVideoError}
             />
             <Button
               variant="secondary"

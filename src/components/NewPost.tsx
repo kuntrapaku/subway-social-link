@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Image, Users, Calendar, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -30,7 +30,21 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
   const [content, setContent] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [video, setVideo] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Clean up any object URLs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+      if (videoPreviewUrl) {
+        URL.revokeObjectURL(videoPreviewUrl);
+      }
+    };
+  }, [imagePreviewUrl, videoPreviewUrl]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +58,16 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
       return;
     }
     
+    // Prepare media URL
+    let mediaUrl: string | undefined;
+    if (video && videoPreviewUrl) {
+      mediaUrl = videoPreviewUrl;
+      console.log("Using video URL:", mediaUrl);
+    } else if (image && imagePreviewUrl) {
+      mediaUrl = imagePreviewUrl;
+      console.log("Using image URL:", mediaUrl);
+    }
+    
     // Create a new post object
     const newPost: Post = {
       id: Date.now().toString(), // Generate a unique ID based on timestamp
@@ -53,7 +77,7 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
       },
       timeAgo: "Just now",
       content: content,
-      imageUrl: image ? URL.createObjectURL(image) : video ? URL.createObjectURL(video) : undefined,
+      imageUrl: mediaUrl,
       likes: 0,
       comments: 0,
       isLiked: false,
@@ -75,6 +99,14 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
     setContent("");
     setImage(null);
     setVideo(null);
+    if (imagePreviewUrl) {
+      URL.revokeObjectURL(imagePreviewUrl);
+      setImagePreviewUrl(null);
+    }
+    if (videoPreviewUrl) {
+      URL.revokeObjectURL(videoPreviewUrl);
+      setVideoPreviewUrl(null);
+    }
   };
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,10 +115,49 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
       setVideo(selectedVideo);
       setImage(null); // Clear image if a video is selected
       
+      // Clean up any previous image URL
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl);
+        setImagePreviewUrl(null);
+      }
+      
+      // Clean up any previous video URL
+      if (videoPreviewUrl) {
+        URL.revokeObjectURL(videoPreviewUrl);
+      }
+      
+      // Create video preview URL
+      const videoUrl = URL.createObjectURL(selectedVideo);
+      setVideoPreviewUrl(videoUrl);
+      console.log("Video selected, URL created:", videoUrl);
+      
       toast({
         title: "Video selected",
         description: "Your video has been selected. Click Share Art to post.",
       });
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedImage = e.target.files[0];
+      setImage(selectedImage);
+      setVideo(null); // Clear video if an image is selected
+      
+      // Clean up any previous video URL
+      if (videoPreviewUrl) {
+        URL.revokeObjectURL(videoPreviewUrl);
+        setVideoPreviewUrl(null);
+      }
+      
+      // Clean up any previous image URL
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+      
+      // Create image preview URL
+      const imageUrl = URL.createObjectURL(selectedImage);
+      setImagePreviewUrl(imageUrl);
     }
   };
 
@@ -108,10 +179,10 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
           />
         </div>
         
-        {image && (
+        {imagePreviewUrl && (
           <div className="mt-3 relative">
             <img 
-              src={URL.createObjectURL(image)} 
+              src={imagePreviewUrl} 
               alt="Art preview" 
               className="w-full h-auto rounded-lg object-cover max-h-60" 
             />
@@ -119,17 +190,23 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
               variant="destructive"
               size="sm"
               className="absolute top-2 right-2"
-              onClick={() => setImage(null)}
+              onClick={() => {
+                if (imagePreviewUrl) {
+                  URL.revokeObjectURL(imagePreviewUrl);
+                }
+                setImagePreviewUrl(null);
+                setImage(null);
+              }}
             >
               Remove
             </Button>
           </div>
         )}
         
-        {video && (
+        {videoPreviewUrl && (
           <div className="mt-3 relative">
             <video 
-              src={URL.createObjectURL(video)} 
+              src={videoPreviewUrl} 
               className="w-full h-auto rounded-lg object-cover max-h-60"
               controls
             />
@@ -137,7 +214,13 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
               variant="destructive"
               size="sm"
               className="absolute top-2 right-2"
-              onClick={() => setVideo(null)}
+              onClick={() => {
+                if (videoPreviewUrl) {
+                  URL.revokeObjectURL(videoPreviewUrl);
+                }
+                setVideoPreviewUrl(null);
+                setVideo(null);
+              }}
             >
               Remove
             </Button>
@@ -151,12 +234,7 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
                 type="file"
                 className="hidden"
                 accept="image/*"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    setImage(e.target.files[0]);
-                    setVideo(null); // Clear video if an image is selected
-                  }
-                }}
+                onChange={handleImageChange}
               />
               <div className="flex items-center text-gray-500 hover:text-orange-600 p-2 rounded-md hover:bg-gray-100">
                 <Image className="h-5 w-5 mr-1" />

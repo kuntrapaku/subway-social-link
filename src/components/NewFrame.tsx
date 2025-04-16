@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Image, Users, Calendar, Video, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +15,15 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // Clean up any object URLs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (videoPreviewUrl) {
+        URL.revokeObjectURL(videoPreviewUrl);
+      }
+    };
+  }, [videoPreviewUrl]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -22,6 +31,31 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
       toast({
         title: "Empty frame post",
         description: "Please add some description or a video to your frame.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!videoPreviewUrl && video) {
+      // Make sure the URL is created if the file exists
+      const newVideoUrl = URL.createObjectURL(video);
+      setVideoPreviewUrl(newVideoUrl);
+      
+      // If videoPreviewUrl wasn't set yet, wait a moment and then create the frame
+      setTimeout(() => createFrame(newVideoUrl), 100);
+      return;
+    }
+    
+    createFrame(videoPreviewUrl);
+  };
+  
+  const createFrame = (videoUrl: string | null) => {
+    // Validate the video URL
+    if (!videoUrl && video) {
+      console.error("Failed to create video URL");
+      toast({
+        title: "Error creating video",
+        description: "There was a problem processing your video.",
         variant: "destructive",
       });
       return;
@@ -36,12 +70,14 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
       },
       timeAgo: "Just now",
       content: content,
-      imageUrl: videoPreviewUrl || undefined,
+      imageUrl: videoUrl || undefined,
       likes: 0,
       comments: 0,
       isLiked: false,
       isVideo: true
     };
+    
+    console.log("Creating new frame with video URL:", videoUrl);
     
     // Call the callback to add the frame to the timeline
     if (onFrameCreated) {
@@ -57,7 +93,10 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
     // Reset form
     setContent("");
     setVideo(null);
-    setVideoPreviewUrl(null);
+    if (videoPreviewUrl) {
+      URL.revokeObjectURL(videoPreviewUrl);
+      setVideoPreviewUrl(null);
+    }
   };
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,9 +104,16 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
       const selectedVideo = e.target.files[0];
       setVideo(selectedVideo);
       
+      // Clean up any previous URL
+      if (videoPreviewUrl) {
+        URL.revokeObjectURL(videoPreviewUrl);
+      }
+      
       // Create video preview URL
       const videoUrl = URL.createObjectURL(selectedVideo);
       setVideoPreviewUrl(videoUrl);
+      
+      console.log("Video selected, created URL:", videoUrl);
     }
   };
 
