@@ -18,10 +18,19 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
 
-  // Check if the video URL is valid when component mounts
+  // Debug logs to track video URL and component lifecycle
   useEffect(() => {
-    console.log("Video URL in PlayableFrameCard:", frame.imageUrl);
-  }, [frame.imageUrl]);
+    console.log("PlayableFrameCard mounted with video URL:", frame.imageUrl);
+    console.log("Frame data:", frame);
+    
+    // Clean up function that runs when component unmounts
+    return () => {
+      console.log("PlayableFrameCard unmounting");
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+    };
+  }, [frame]);
 
   const handleLike = () => {
     toggleFrameLike(frame.id);
@@ -65,8 +74,9 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
     }
   };
 
-  const handleVideoError = () => {
+  const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
     console.error("Video failed to load:", frame.imageUrl);
+    console.error("Video error event:", e);
     toast({
       title: "Video error",
       description: "This video could not be loaded. The file may be missing or corrupted.",
@@ -74,12 +84,8 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
     });
   };
 
-  const handleShare = () => {
-    toast({
-      title: "Share frame",
-      description: "Sharing options would appear here in a production app",
-    });
-  };
+  // Check if video URL exists and is valid
+  const hasValidVideo = frame.imageUrl && typeof frame.imageUrl === 'string' && frame.imageUrl.trim() !== '';
 
   return (
     <div className="bg-white rounded-lg shadow-md border border-orange-100 p-4 mb-4 animate-fade-in">
@@ -101,7 +107,7 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
 
       <div className="mt-3">
         <p className="text-sm">{frame.content}</p>
-        {frame.imageUrl && (
+        {hasValidVideo ? (
           <div className="mt-3 relative">
             <video 
               ref={videoRef}
@@ -111,6 +117,8 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
               onPause={() => setIsPlaying(false)}
               onEnded={() => setIsPlaying(false)}
               onError={handleVideoError}
+              preload="metadata"
+              controls={isPlaying}
             />
             <Button
               variant="secondary"
@@ -124,6 +132,10 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
                 <Play className="h-6 w-6" />
               )}
             </Button>
+          </div>
+        ) : (
+          <div className="mt-3 p-4 bg-gray-100 rounded-lg text-center">
+            <p className="text-gray-500">No video available</p>
           </div>
         )}
       </div>
@@ -148,7 +160,12 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
           <Button 
             variant="ghost" 
             className="text-sm flex items-center text-gray-500 hover:text-orange-600"
-            onClick={handleShare}
+            onClick={() => {
+              toast({
+                title: "Share frame",
+                description: "Sharing options would appear here in a production app",
+              });
+            }}
           >
             <Share2 className="h-4 w-4 mr-1" />
             <span>Share</span>

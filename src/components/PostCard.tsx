@@ -35,9 +35,17 @@ const PostCard = ({ post }: PostCardProps) => {
   // Debug log to check video URLs
   useEffect(() => {
     if (post.isVideo) {
-      console.log("Video URL in PostCard:", post.imageUrl);
+      console.log("PostCard mounted with video URL:", post.imageUrl);
+      console.log("Post data:", post);
     }
-  }, [post.imageUrl, post.isVideo]);
+    
+    // Clean up function
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+    };
+  }, [post]);
 
   const handleLike = () => {
     togglePostLike(post.id);
@@ -102,14 +110,18 @@ const PostCard = ({ post }: PostCardProps) => {
     }
   };
 
-  const handleVideoError = () => {
+  const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
     console.error("Video failed to load:", post.imageUrl);
+    console.error("Video error event:", e);
     toast({
       title: "Video error",
       description: "This video could not be loaded. The file may be missing or corrupted.",
       variant: "destructive"
     });
   };
+
+  // Check if video URL exists and is valid
+  const hasValidMedia = post.imageUrl && typeof post.imageUrl === 'string' && post.imageUrl.trim() !== '';
 
   return (
     <div className="bg-white rounded-lg shadow-md border border-orange-100 p-4 mb-4 animate-fade-in">
@@ -131,7 +143,7 @@ const PostCard = ({ post }: PostCardProps) => {
 
       <div className="mt-3">
         <p className="text-sm">{post.content}</p>
-        {post.imageUrl && (
+        {hasValidMedia && (
           <div className="mt-3 relative">
             {post.isVideo ? (
               <>
@@ -143,6 +155,8 @@ const PostCard = ({ post }: PostCardProps) => {
                   onPause={() => setIsPlaying(false)}
                   onEnded={() => setIsPlaying(false)}
                   onError={handleVideoError}
+                  preload="metadata"
+                  controls={isPlaying}
                 />
                 <Button
                   variant="secondary"
@@ -162,6 +176,14 @@ const PostCard = ({ post }: PostCardProps) => {
                 src={post.imageUrl} 
                 alt="Art" 
                 className="w-full h-auto rounded-lg object-cover max-h-96" 
+                onError={() => {
+                  console.error("Image failed to load:", post.imageUrl);
+                  toast({
+                    title: "Image error",
+                    description: "This image could not be loaded.",
+                    variant: "destructive"
+                  });
+                }}
               />
             )}
           </div>
