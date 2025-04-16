@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { NotificationType } from '@/types/notifications';
 
@@ -21,6 +21,23 @@ interface NotificationsProviderProps {
 
 export const NotificationsProvider: React.FC<NotificationsProviderProps> = ({ children }) => {
   const notificationsHook = useNotifications();
+  
+  // Add global event listener to allow adding notifications from other components
+  useEffect(() => {
+    const handleAddNotification = (event: CustomEvent) => {
+      if (event.detail) {
+        notificationsHook.addNotification(event.detail);
+      }
+    };
+    
+    // Add event listener with type assertion
+    window.addEventListener('add-notification', handleAddNotification as EventListener);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('add-notification', handleAddNotification as EventListener);
+    };
+  }, [notificationsHook]);
   
   return (
     <NotificationsContext.Provider value={notificationsHook}>

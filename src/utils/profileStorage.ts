@@ -206,6 +206,9 @@ export const searchProfiles = async (query: string): Promise<Profile[]> => {
   }
 };
 
+// Import the notification context for sending notifications
+import { NotificationType } from "@/types/notifications";
+
 // Send connection request
 export const sendConnectionRequest = async (
   currentUser: User,
@@ -253,6 +256,28 @@ export const sendConnectionRequest = async (
       
       requests.push(newRequest);
       saveConnectionRequestsToLocalStorage(requests);
+    }
+    
+    // Create a notification for the receiver
+    try {
+      // Get sender profile for the notification
+      const senderProfile = await getProfile(currentUser);
+      
+      // Get any notification events from localStorage
+      const notifyEvent = new CustomEvent("add-notification", { 
+        detail: {
+          type: "connection",
+          content: "sent you a connection request",
+          user: senderProfile.name,
+          userId: currentUser.id,
+          connectionId: newRequest.id
+        }
+      });
+      
+      // Dispatch the event
+      window.dispatchEvent(notifyEvent);
+    } catch (notifyError) {
+      console.error("Error creating notification:", notifyError);
     }
     
     return true;
@@ -345,6 +370,55 @@ export const acceptConnectionRequest = async (requestId: string): Promise<boolea
         
         saveProfilesToLocalStorage(profiles);
       }
+    }
+    
+    // Get the connection request details to create notifications
+    try {
+      let connectionRequest: ConnectionRequest | null = null;
+      
+      // Try to get the request from Supabase
+      try {
+        const { data, error } = await (supabase as any)
+          .from('connection_requests')
+          .select('*, sender:profiles!sender_id(*), receiver:profiles!receiver_id(*)')
+          .eq('id', requestId)
+          .single();
+        
+        if (!error) {
+          connectionRequest = data as ConnectionRequest;
+        }
+      } catch (err) {
+        // Try localStorage instead
+        const requests = getConnectionRequestsFromLocalStorage();
+        const profiles = getProfilesFromLocalStorage();
+        
+        const request = requests.find(req => req.id === requestId);
+        if (request) {
+          connectionRequest = {
+            ...request,
+            sender: profiles[request.sender_id],
+            receiver: profiles[request.receiver_id]
+          };
+        }
+      }
+      
+      if (connectionRequest && connectionRequest.sender && connectionRequest.receiver) {
+        // Create a notification for the sender that their request was accepted
+        const notifyEvent = new CustomEvent("add-notification", { 
+          detail: {
+            type: "connection",
+            content: "accepted your connection request",
+            user: connectionRequest.receiver.name,
+            userId: connectionRequest.receiver_id,
+            connectionId: connectionRequest.id
+          }
+        });
+        
+        // Dispatch the event
+        window.dispatchEvent(notifyEvent);
+      }
+    } catch (notifyError) {
+      console.error("Error creating notification:", notifyError);
     }
     
     return true;
