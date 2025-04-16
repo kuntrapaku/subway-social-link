@@ -3,42 +3,49 @@ import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 const AuthCallback = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const location = useLocation();
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
 
   useEffect(() => {
     const handleAuthRedirect = async () => {
       try {
         setLoading(true);
+        console.log("Auth callback initiated, URL:", window.location.href);
         
         // Process the hash fragment containing the access token
         const hashParams = new URLSearchParams(location.hash.substring(1));
         const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
+        
+        console.log("Access token found:", !!accessToken);
         
         if (accessToken) {
           // If we have an access token, let Supabase handle the session
+          console.log("Setting session with tokens");
           const { error } = await supabase.auth.setSession({
             access_token: accessToken,
-            refresh_token: hashParams.get("refresh_token") || "",
+            refresh_token: refreshToken || "",
           });
 
           if (error) {
+            console.error("Session setup error:", error);
             throw error;
           }
 
-          toast({
-            title: "Authentication successful",
-            description: "You are now logged in.",
-          });
+          console.log("Session setup successful");
+          toast.success("Authentication successful");
         } else {
           // Check for error in the URL query parameters
           const urlParams = new URLSearchParams(location.search);
           const errorCode = urlParams.get("error");
           const errorDescription = urlParams.get("error_description");
+          
+          console.log("Error params:", errorCode, errorDescription);
           
           if (errorCode) {
             throw new Error(errorDescription || `Authentication error: ${errorCode}`);
@@ -49,18 +56,14 @@ const AuthCallback = () => {
       } catch (err: any) {
         console.error("Auth callback error:", err);
         setError(err.message || "Authentication failed");
-        toast({
-          title: "Authentication failed",
-          description: err.message || "Something went wrong",
-          variant: "destructive",
-        });
+        toast.error(err.message || "Authentication failed");
       } finally {
         setLoading(false);
       }
     };
 
     handleAuthRedirect();
-  }, [location, toast]);
+  }, [location]);
 
   if (loading) {
     return (
@@ -73,13 +76,15 @@ const AuthCallback = () => {
     );
   }
 
-  // If there was an error, we could show it, but for simplicity let's just redirect to login
-  if (error) {
-    return <Navigate to="/login" replace />;
+  // On success, redirect to home
+  if (!error) {
+    console.log("Auth callback completed, redirecting to home");
+    return <Navigate to="/" replace />;
   }
 
-  // On success, redirect to home
-  return <Navigate to="/" replace />;
+  // If there was an error, redirect to login
+  console.log("Auth callback completed with error, redirecting to login");
+  return <Navigate to="/login" replace />;
 };
 
 export default AuthCallback;

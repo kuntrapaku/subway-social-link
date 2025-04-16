@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Info, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface SignUpFormProps {
   getRedirectUrl: () => string
@@ -21,7 +22,7 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
   const [loading, setLoading] = useState(false)
   const [skipEmailConfirmation, setSkipEmailConfirmation] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const { toast } = useToast()
+  const { toast: uiToast } = useToast()
   const navigate = useNavigate()
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -35,10 +36,11 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
     
     try {
       setLoading(true)
+      console.log("Attempting sign up with email:", email, "Skip confirmation:", skipEmailConfirmation)
       
       if (skipEmailConfirmation) {
         // First try to sign up the user
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { error: signUpError, data } = await supabase.auth.signUp({
           email,
           password,
         })
@@ -51,7 +53,9 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
           throw signUpError
         }
         
-        // If signup successful, then sign in
+        console.log("Sign up successful:", data)
+        
+        // If signup successful, then sign in immediately
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -62,23 +66,22 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
           throw signInError
         }
         
-        toast({
-          title: "Account created",
-          description: "You've been automatically signed in!",
-        })
+        console.log("Auto sign-in successful, will redirect shortly")
+        toast.success("Account created! You've been signed in.")
         
-        // Use a short timeout to ensure state updates before navigation
-        setTimeout(() => {
-          navigate('/')
-        }, 100)
+        // We don't need to navigate here as the AuthContext will handle the redirect
       } else {
-        const { error } = await supabase.auth.signUp({
+        // Standard flow with email confirmation
+        console.log("Using email confirmation flow with redirect URL:", getRedirectUrl())
+        const { error, data } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: getRedirectUrl(),
           },
         })
+
+        console.log("Sign up with confirmation response:", data)
 
         if (error) {
           console.error("Sign up with email confirmation error:", error.message)
@@ -88,19 +91,14 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
           throw error
         }
         
-        toast({
-          title: "Check your email",
-          description: "We've sent you a confirmation link!",
-        })
+        toast.success("Check your email for a confirmation link")
+        
+        // No navigation needed here as the user needs to confirm their email
       }
     } catch (error: any) {
       console.error("Signup error:", error.message)
       setErrorMessage(error.message)
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      })
+      toast.error(error.message || "Sign up failed")
     } finally {
       setLoading(false)
     }

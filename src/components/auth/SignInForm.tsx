@@ -9,13 +9,14 @@ import { CardContent, CardFooter } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 const SignInForm = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const { toast } = useToast()
+  const { toast: uiToast } = useToast()
   const navigate = useNavigate()
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -24,19 +25,22 @@ const SignInForm = () => {
     
     try {
       setLoading(true)
+      console.log("Attempting sign in with email:", email)
+      
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      if (error) throw error
+      if (error) {
+        console.error("Sign in error:", error.message)
+        throw error
+      }
       
-      toast({
-        title: "Welcome back!",
-        description: "You've successfully signed in.",
-      })
+      console.log("Sign in successful, redirecting...")
+      toast.success("Welcome back!")
       
-      navigate('/')
+      // We don't need to navigate here as the AuthContext will handle the redirect
     } catch (error: any) {
       console.error("Sign in error:", error.message)
       
@@ -47,11 +51,7 @@ const SignInForm = () => {
         setErrorMessage(error.message)
       }
       
-      toast({
-        title: "Sign in failed",
-        description: error.message,
-        variant: "destructive"
-      })
+      toast.error(error.message || "Sign in failed")
     } finally {
       setLoading(false)
     }
