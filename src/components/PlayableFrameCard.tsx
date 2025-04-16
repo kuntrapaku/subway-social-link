@@ -21,12 +21,43 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
 
-  // Extensive debugging for video URLs and component lifecycle
+  // Improved debugging for video URLs
   useEffect(() => {
-    console.log("PlayableFrameCard mounted, frame ID:", frame.id);
+    console.log("PlayableFrameCard mounted with frame ID:", frame.id);
+    console.log("Video URL:", frame.imageUrl);
     console.log("Video URL type:", typeof frame.imageUrl);
-    console.log("Video URL value:", frame.imageUrl);
     console.log("Is video flag:", frame.isVideo);
+    
+    // Attempt to load the video when component mounts
+    if (hasValidVideo && videoRef.current) {
+      console.log(`Initial load: Trying to play video: ${frame.imageUrl}`);
+      
+      // Force video to reload
+      videoRef.current.load();
+      
+      // Add a short delay before attempting to play
+      const timer = setTimeout(() => {
+        if (videoRef.current) {
+          // Try to play
+          const playPromise = videoRef.current.play();
+          
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                console.log("Auto-play successful for video:", frame.imageUrl);
+                setIsPlaying(true);
+                setVideoLoaded(true);
+              })
+              .catch(error => {
+                console.log("Auto-play prevented (this is normal in many browsers):", error);
+                // Don't mark as error since this could be due to browser autoplay policy
+              });
+          }
+        }
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
     
     return () => {
       console.log("PlayableFrameCard unmounting for frame ID:", frame.id);
@@ -34,39 +65,17 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
         videoRef.current.pause();
       }
     };
-  }, [frame]);
+  }, [frame.id, frame.imageUrl]);
 
-  // Force video reload when component mounts or when retry is attempted
+  // Reset video element and try again when video URL changes or retry is attempted
   useEffect(() => {
     if (videoRef.current && !videoError && hasValidVideo) {
+      console.log(`Attempt ${videoAttempts + 1}: Loading video for frame ID: ${frame.id}`);
+      
       // Reset video element
       videoRef.current.load();
-      
-      // Add a short delay before attempting to play
-      const timer = setTimeout(() => {
-        console.log(`Attempt ${videoAttempts + 1}: Trying to play video:`, frame.imageUrl);
-        
-        if (videoRef.current) {
-          const playPromise = videoRef.current.play();
-          
-          if (playPromise !== undefined) {
-            playPromise
-              .then(() => {
-                console.log("Video play successful for frame ID:", frame.id);
-                setIsPlaying(true);
-                setVideoLoaded(true);
-              })
-              .catch(error => {
-                console.error("Video play prevented:", error);
-                // Don't set error yet, just log the issue
-              });
-          }
-        }
-      }, 500);
-      
-      return () => clearTimeout(timer);
     }
-  }, [frame, videoAttempts, videoError]);
+  }, [frame.imageUrl, videoAttempts, videoError, frame.id]);
 
   const handleLike = () => {
     toggleFrameLike(frame.id);
@@ -96,7 +105,7 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
           setVideoError(true);
           toast({
             title: "Video playback error",
-            description: "There was an issue playing this video. The URL may be invalid.",
+            description: "There was an issue playing this video.",
             variant: "destructive"
           });
         });
@@ -106,15 +115,10 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
   };
 
   const retryVideo = () => {
-    console.log("Retrying video for frame ID:", frame.id);
+    console.log("Retrying video load for frame ID:", frame.id);
     setVideoError(false);
     setVideoLoaded(false);
-    setVideoAttempts(prev => prev + 1);
-    
-    // Force video element to reload
-    if (videoRef.current) {
-      videoRef.current.load();
-    }
+    setVideoAttempts(videoAttempts + 1);
     
     toast({
       title: "Retrying video",
@@ -122,17 +126,22 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
     });
   };
 
-  const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+  const handleVideoError = () => {
     console.error("Video failed to load:", frame.imageUrl);
-    console.error("Video error event details:", e.currentTarget.error);
     setVideoError(true);
     setVideoLoaded(false);
+    setIsPlaying(false);
   };
 
   const handleVideoLoad = () => {
     console.log("Video loaded successfully:", frame.imageUrl);
     setVideoLoaded(true);
     setVideoError(false);
+  };
+  
+  const handleVideoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    togglePlay();
   };
 
   // More robust URL validation
@@ -141,10 +150,11 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
     typeof frame.imageUrl === 'string' && 
     frame.imageUrl.trim() !== '' &&
     !frame.imageUrl.includes('undefined') &&
-    !frame.imageUrl.includes('null')
+    !frame.imageUrl.includes('null') &&
+    !frame.imageUrl.includes('[object Object]')
   );
 
-  // Safely format video URL
+  // Format video URL safely
   const videoUrl = hasValidVideo ? frame.imageUrl : '';
 
   return (
@@ -187,18 +197,23 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
                   ref={videoRef}
                   src={videoUrl} 
                   className="w-full h-auto rounded-lg object-cover"
+                  onClick={handleVideoClick}
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
                   onEnded={() => setIsPlaying(false)}
                   onError={handleVideoError}
                   onLoadedData={handleVideoLoad}
-                  preload="auto"
                   controls
                   playsInline
                   loop
                   muted
                 />
-                {!isPlaying && (
+                {!isPlaying && !videoLoaded && !videoError && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 rounded-lg">
+                    <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full"></div>
+                  </div>
+                )}
+                {!isPlaying && videoLoaded && (
                   <Button
                     variant="secondary"
                     size="icon"

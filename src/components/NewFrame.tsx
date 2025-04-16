@@ -36,13 +36,14 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
       return;
     }
     
-    if (!videoPreviewUrl && video) {
-      // Make sure the URL is created if the file exists
+    // Ensure we have a video URL if a video file was selected
+    if (video && !videoPreviewUrl) {
+      // Create a new URL if one doesn't exist
       const newVideoUrl = URL.createObjectURL(video);
       console.log("Created new video URL in submit handler:", newVideoUrl);
       setVideoPreviewUrl(newVideoUrl);
       
-      // If videoPreviewUrl wasn't set yet, wait a moment and then create the frame
+      // Add a short delay to ensure the URL is set, then create the frame
       setTimeout(() => createFrame(newVideoUrl), 300);
       return;
     }
@@ -51,9 +52,11 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
   };
   
   const createFrame = (videoUrl: string | null) => {
+    console.log("Creating frame with video URL:", videoUrl);
+    
     // Validate the video URL
     if (!videoUrl && video) {
-      console.error("Failed to create video URL");
+      console.error("Failed to create video URL although video file exists");
       toast({
         title: "Error creating video",
         description: "There was a problem processing your video.",
@@ -62,13 +65,9 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
       return;
     }
     
-    if (videoUrl) {
-      console.log("Creating frame with valid video URL:", videoUrl);
-    }
-    
     // Create a new frame object
     const newFrame: Post = {
-      id: Date.now().toString(), // Generate a unique ID based on timestamp
+      id: `frame-${Date.now().toString()}`, // Use more specific ID
       author: {
         name: "You", // In a real app, this would come from authenticated user
         title: "Filmmaker"
@@ -81,6 +80,9 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
       isLiked: false,
       isVideo: true
     };
+    
+    console.log("Created new frame:", newFrame);
+    console.log("Frame video URL:", newFrame.imageUrl);
     
     // Call the callback to add the frame to the timeline
     if (onFrameCreated) {
@@ -108,12 +110,18 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
       
       console.log("Video selected:", selectedVideo.name, "Size:", selectedVideo.size);
       
-      setVideo(selectedVideo);
+      // Clear existing video if present
+      if (video) {
+        setVideo(null);
+      }
       
       // Clean up any previous URL
       if (videoPreviewUrl) {
         URL.revokeObjectURL(videoPreviewUrl);
+        setVideoPreviewUrl(null);
       }
+      
+      setVideo(selectedVideo);
       
       // Create video preview URL
       const videoUrl = URL.createObjectURL(selectedVideo);
@@ -159,9 +167,9 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
               src={videoPreviewUrl}
               className="w-full h-auto rounded-lg object-cover max-h-60"
               controls
-              preload="auto"
               playsInline
               muted
+              preload="auto"
             />
             <Button 
               variant="destructive"
