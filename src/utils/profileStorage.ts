@@ -294,7 +294,7 @@ export const getPendingConnectionRequests = async (userId: string): Promise<Conn
       return pendingRequests.map(req => ({
         ...req,
         sender: profiles[req.sender_id]
-      }));
+      })) as ConnectionRequest[];
     }
   } catch (error) {
     console.error("Error in getPendingConnectionRequests:", error);
@@ -324,7 +324,7 @@ export const acceptConnectionRequest = async (requestId: string): Promise<boolea
       
       // Find and update the request
       const updatedRequests = requests.map(req => 
-        req.id === requestId ? { ...req, status: 'accepted' } : req
+        req.id === requestId ? { ...req, status: 'accepted' as const } : req
       );
       
       saveConnectionRequestsToLocalStorage(updatedRequests);
