@@ -1,8 +1,9 @@
+
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User, Users } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { sendConnectionRequest, Profile } from "@/utils/profileStorage";
+import { sendConnectionRequest, Profile } from "@/utils/profiles";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";

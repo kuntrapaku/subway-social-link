@@ -1,15 +1,11 @@
-
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
-import ProfileCard from "@/components/ProfileCard";
-import { getProfileById, Profile } from "@/utils/profileStorage";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/context/AuthContext";
+import { getProfileById, Profile } from "@/utils/profiles";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Users, Image, Video, Newspaper, Calendar, ArrowLeft } from "lucide-react";
-import PostCard from "@/components/PostCard";
-import { useAuth } from "@/context/AuthContext";
+import { User, MapPin, Briefcase, Calendar, Link, Users, MessageSquare } from "lucide-react";
 
 const UserProfile = () => {
   const { userId } = useParams();

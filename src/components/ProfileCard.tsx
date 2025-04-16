@@ -3,7 +3,7 @@ import { User, MapPin, Briefcase, Calendar, Link, Users, MessageSquare } from "l
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { EditProfileDialog } from "./EditProfileDialog";
-import { getProfile, saveProfile, updateProfile, Profile as ProfileType } from "@/utils/profileStorage";
+import { getProfile, saveProfile, updateProfile, Profile as ProfileType } from "@/utils/profiles";
 import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 

@@ -6,8 +6,8 @@ import CreativeDepartments from "./index/CreativeDepartments";
 import UpcomingEvents from "./index/UpcomingEvents";
 import SuggestedConnections from "@/components/SuggestedConnections";
 import { useAuth } from "@/context/AuthContext";
-import { getSuggestedProfiles } from "@/utils/profileStorage";
-import { Profile } from "@/utils/profileStorage";
+import { getSuggestedProfiles } from "@/utils/profiles";
+import { Profile } from "@/utils/profiles";
 
 const RightSidebar = () => {
   const { user } = useAuth();
