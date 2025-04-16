@@ -75,8 +75,8 @@ export const getProfile = async (user: User | null): Promise<Profile> => {
   try {
     // Try to get profile from Supabase first
     try {
-      // @ts-ignore - Bypass TypeScript errors with Supabase client
-      const { data, error } = await supabase
+      // Use type casting to bypass TypeScript errors with Supabase client
+      const { data, error } = await (supabase as any)
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
@@ -105,8 +105,7 @@ export const getProfile = async (user: User | null): Promise<Profile> => {
       
       // Try to persist to Supabase again
       try {
-        // @ts-ignore
-        await supabase.from('profiles').insert(newProfile);
+        await (supabase as any).from('profiles').insert(newProfile);
       } catch (e) {
         console.error("Failed to persist new profile to Supabase:", e);
       }
@@ -124,8 +123,8 @@ export const saveProfile = async (profile: Profile): Promise<void> => {
   try {
     // Try Supabase first
     try {
-      // @ts-ignore - Bypass TypeScript errors with Supabase client
-      const { error } = await supabase
+      // Use type casting to bypass TypeScript errors with Supabase client
+      const { error } = await (supabase as any)
         .from('profiles')
         .upsert(profile, { onConflict: 'user_id' });
       
@@ -184,8 +183,8 @@ export const searchProfiles = async (query: string): Promise<Profile[]> => {
   try {
     // Try Supabase first
     try {
-      // @ts-ignore - Bypass TypeScript errors with Supabase client
-      const { data, error } = await supabase
+      // Use type casting to bypass TypeScript errors with Supabase client
+      const { data, error } = await (supabase as any)
         .from('profiles')
         .select('*')
         .ilike('name', `%${query}%`)
@@ -239,8 +238,8 @@ export const sendConnectionRequest = async (
     
     // Try Supabase first
     try {
-      // @ts-ignore - Bypass TypeScript errors with Supabase client
-      const { error } = await supabase
+      // Use type casting to bypass TypeScript errors with Supabase client
+      const { error } = await (supabase as any)
         .from('connection_requests')
         .insert(newRequest);
       
@@ -301,8 +300,8 @@ export const getPendingConnectionRequests = async (userId: string): Promise<Conn
   try {
     // Try Supabase first
     try {
-      // @ts-ignore - Bypass TypeScript errors with Supabase client
-      const { data, error } = await supabase
+      // Use type casting to bypass TypeScript errors with Supabase client
+      const { data, error } = await (supabase as any)
         .from('connection_requests')
         .select('*, sender:profiles!sender_id(*)')
         .eq('receiver_id', userId)
@@ -342,8 +341,8 @@ export const acceptConnectionRequest = async (requestId: string): Promise<boolea
   try {
     // Try Supabase first
     try {
-      // @ts-ignore - Bypass TypeScript errors with Supabase client
-      const { error } = await supabase
+      // Use type casting to bypass TypeScript errors with Supabase client
+      const { error } = await (supabase as any)
         .from('connection_requests')
         .update({ status: 'accepted' })
         .eq('id', requestId);
@@ -387,8 +386,8 @@ export const acceptConnectionRequest = async (requestId: string): Promise<boolea
       
       // Try to get the request from Supabase
       try {
-        // @ts-ignore - Bypass TypeScript errors with Supabase client
-        const { data, error } = await supabase
+        // Use type casting to bypass TypeScript errors with Supabase client
+        const { data, error } = await (supabase as any)
           .from('connection_requests')
           .select('*, sender:profiles!sender_id(*), receiver:profiles!receiver_id(*)')
           .eq('id', requestId)
@@ -443,8 +442,8 @@ export const getUserConnections = async (userId: string): Promise<Profile[]> => 
   try {
     // Try Supabase first
     try {
-      // @ts-ignore - Bypass TypeScript errors with Supabase client
-      const { data, error } = await supabase
+      // Use type casting to bypass TypeScript errors with Supabase client
+      const { data, error } = await (supabase as any)
         .from('connection_requests')
         .select('*, sender:profiles!sender_id(*), receiver:profiles!receiver_id(*)')
         .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
@@ -496,8 +495,8 @@ export const getSuggestedProfiles = async (userId: string, limit: number = 5): P
       const connectionIds = connections.map(c => c.user_id);
       
       // Also get pending requests to exclude them
-      // @ts-ignore - Bypass TypeScript errors with Supabase client
-      const { data: pendingRequests, error: pendingError } = await supabase
+      // Use type casting to bypass TypeScript errors with Supabase client
+      const { data: pendingRequests, error: pendingError } = await (supabase as any)
         .from('connection_requests')
         .select('sender_id, receiver_id')
         .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
@@ -509,8 +508,8 @@ export const getSuggestedProfiles = async (userId: string, limit: number = 5): P
       const excludeIds = [...connectionIds, ...pendingIds, userId];
       
       // Get profiles not in connections or pending requests
-      // @ts-ignore - Bypass TypeScript errors with Supabase client
-      const { data, error } = await supabase
+      // Use type casting to bypass TypeScript errors with Supabase client
+      const { data, error } = await (supabase as any)
         .from('profiles')
         .select('*')
         .not('user_id', 'in', `(${excludeIds.join(',')})`)

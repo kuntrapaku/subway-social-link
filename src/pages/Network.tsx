@@ -238,7 +238,13 @@ const Network = () => {
                 <h3 className="text-xl font-medium mb-2">No connections yet</h3>
                 <p className="text-gray-500 mb-6">Start building your professional network by connecting with other film industry professionals</p>
                 <Button 
-                  onClick={() => document.querySelector('[data-value="suggestions"]')?.click()}
+                  onClick={() => {
+                    // Fixed the element.click() error by using proper type assertion
+                    const tabElement = document.querySelector('[data-value="suggestions"]');
+                    if (tabElement instanceof HTMLElement) {
+                      tabElement.click();
+                    }
+                  }}
                   className="bg-orange-600 hover:bg-orange-700"
                 >
                   Explore Suggestions
