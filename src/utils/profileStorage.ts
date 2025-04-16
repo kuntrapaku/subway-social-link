@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Database } from "@/integrations/supabase/types";
@@ -312,7 +311,7 @@ export const acceptConnectionRequest = async (requestId: string): Promise<boolea
       // Using any type to bypass type checking for Supabase
       const { error } = await (supabase as any)
         .from('connection_requests')
-        .update({ status: 'accepted' })
+        .update({ status: 'accepted' as 'pending' | 'accepted' | 'rejected' })
         .eq('id', requestId);
       
       if (error) {

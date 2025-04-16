@@ -20,6 +20,7 @@ const Navbar = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -57,6 +58,16 @@ const Navbar = () => {
     }
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!searchQuery.trim()) return;
+    
+    // Navigate to network page with search query
+    navigate(`/network?search=${encodeURIComponent(searchQuery)}`);
+    setSearchQuery("");
+  };
+
   return (
     <nav className="fixed top-0 w-full bg-white border-b border-subway-100 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -92,7 +103,7 @@ const Navbar = () => {
             </div>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-4">
-            <div className="relative">
+            <form onSubmit={handleSearch} className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
               </div>
@@ -100,8 +111,11 @@ const Navbar = () => {
                 type="text"
                 className="subway-input pl-10 w-64"
                 placeholder="Search creators, art..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
-            </div>
+              <button type="submit" className="hidden">Search</button>
+            </form>
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

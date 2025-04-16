@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { useLocation } from "react-router-dom";
 import { 
   getPendingConnectionRequests, 
   searchProfiles, 
@@ -19,6 +20,7 @@ import {
 const Network = () => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -27,6 +29,19 @@ const Network = () => {
   const [connections, setConnections] = useState<Profile[]>([]);
   const [suggestions, setSuggestions] = useState<Profile[]>([]);
   const [filteredConnections, setFilteredConnections] = useState<Profile[]>([]);
+  const [activeTab, setActiveTab] = useState("connections");
+
+  // Handle URL search parameters
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const urlSearchQuery = params.get('search');
+    
+    if (urlSearchQuery) {
+      setSearchQuery(urlSearchQuery);
+      setActiveTab("search");
+      handleSearch(urlSearchQuery);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     if (user) {
@@ -59,15 +74,15 @@ const Network = () => {
     }
   }, [searchQuery, connections]);
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
+  const handleSearch = async (query: string = searchQuery) => {
+    if (!query.trim()) {
       setSearchResults([]);
       return;
     }
 
     setIsSearching(true);
     try {
-      const results = await searchProfiles(searchQuery);
+      const results = await searchProfiles(query);
       
       // Filter out the current user and existing connections
       const filteredResults = results.filter(profile => {
@@ -187,7 +202,7 @@ const Network = () => {
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-xl shadow-md border border-orange-100 p-6 mb-6">
-          <Tabs defaultValue="connections">
+          <Tabs defaultValue="connections" value={activeTab} onValueChange={setActiveTab}>
             <div className="flex justify-between items-center mb-4">
               <h1 className="text-2xl font-bold text-gray-800">Film Artists</h1>
               <TabsList className="bg-gray-100">
@@ -316,7 +331,7 @@ const Network = () => {
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   />
                   <Button 
-                    onClick={handleSearch}
+                    onClick={() => handleSearch()}
                     className="rounded-l-none bg-orange-600 hover:bg-orange-700"
                     disabled={isSearching || !searchQuery.trim()}
                   >
