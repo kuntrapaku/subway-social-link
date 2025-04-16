@@ -74,7 +74,7 @@ export const getProfile = async (user: User | null): Promise<Profile> => {
   try {
     // Try to get profile from Supabase first
     try {
-      // @ts-ignore - Ignore type errors with Supabase for now
+      // @ts-ignore - Supabase type definitions haven't been properly generated yet
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -114,7 +114,7 @@ export const saveProfile = async (profile: Profile): Promise<void> => {
   try {
     // Try Supabase first
     try {
-      // @ts-ignore - Ignore type errors with Supabase for now
+      // @ts-ignore - Supabase type definitions haven't been properly generated yet
       const { error } = await supabase
         .from('profiles')
         .upsert(profile, { onConflict: 'user_id' });
@@ -174,7 +174,7 @@ export const searchProfiles = async (query: string): Promise<Profile[]> => {
   try {
     // Try Supabase first
     try {
-      // @ts-ignore - Ignore type errors with Supabase for now
+      // @ts-ignore - Supabase type definitions haven't been properly generated yet
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -226,7 +226,7 @@ export const sendConnectionRequest = async (
     
     // Try Supabase first
     try {
-      // @ts-ignore - Ignore type errors with Supabase for now
+      // @ts-ignore - Supabase type definitions haven't been properly generated yet
       const { error } = await supabase
         .from('connection_requests')
         .insert(newRequest);
@@ -266,7 +266,7 @@ export const getPendingConnectionRequests = async (userId: string): Promise<Conn
   try {
     // Try Supabase first
     try {
-      // @ts-ignore - Ignore type errors with Supabase for now
+      // @ts-ignore - Supabase type definitions haven't been properly generated yet
       const { data, error } = await supabase
         .from('connection_requests')
         .select('*, sender:profiles!sender_id(*)')
@@ -307,10 +307,10 @@ export const acceptConnectionRequest = async (requestId: string): Promise<boolea
   try {
     // Try Supabase first
     try {
-      // @ts-ignore - Ignore type errors with Supabase for now
+      // @ts-ignore - Supabase type definitions haven't been properly generated yet
       const { error } = await supabase
         .from('connection_requests')
-        .update({ status: 'accepted' })
+        .update({ status: 'accepted' as const })
         .eq('id', requestId);
       
       if (error) {
@@ -358,7 +358,7 @@ export const getUserConnections = async (userId: string): Promise<Profile[]> => 
   try {
     // Try Supabase first
     try {
-      // @ts-ignore - Ignore type errors with Supabase for now
+      // @ts-ignore - Supabase type definitions haven't been properly generated yet
       const { data, error } = await supabase
         .from('connection_requests')
         .select('*, sender:profiles!sender_id(*), receiver:profiles!receiver_id(*)')
