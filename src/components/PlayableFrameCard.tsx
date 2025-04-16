@@ -18,6 +18,7 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const [videoError, setVideoError] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
 
   // Debug logs to track video URL and component lifecycle
   useEffect(() => {
@@ -87,6 +88,11 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
     });
   };
 
+  const handleVideoLoad = () => {
+    console.log("Video loaded successfully:", frame.imageUrl);
+    setVideoLoaded(true);
+  };
+
   // Check if video URL exists and is valid
   const hasValidVideo = frame.imageUrl && typeof frame.imageUrl === 'string' && frame.imageUrl.trim() !== '';
 
@@ -129,10 +135,11 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
                   onPause={() => setIsPlaying(false)}
                   onEnded={() => setIsPlaying(false)}
                   onError={handleVideoError}
+                  onLoadedData={handleVideoLoad}
                   preload="metadata"
                   controls={isPlaying}
                   playsInline
-                  muted
+                  loop
                 />
                 <Button
                   variant="secondary"

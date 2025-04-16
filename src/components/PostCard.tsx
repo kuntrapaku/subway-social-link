@@ -30,6 +30,7 @@ const PostCard = ({ post }: PostCardProps) => {
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
 
@@ -123,6 +124,11 @@ const PostCard = ({ post }: PostCardProps) => {
     });
   };
 
+  const handleVideoLoad = () => {
+    console.log("Video loaded successfully:", post.imageUrl);
+    setVideoLoaded(true);
+  };
+
   // Check if video URL exists and is valid
   const hasValidMedia = post.imageUrl && typeof post.imageUrl === 'string' && post.imageUrl.trim() !== '';
 
@@ -166,10 +172,11 @@ const PostCard = ({ post }: PostCardProps) => {
                     onPause={() => setIsPlaying(false)}
                     onEnded={() => setIsPlaying(false)}
                     onError={handleVideoError}
+                    onLoadedData={handleVideoLoad}
                     preload="metadata"
                     controls={isPlaying}
                     playsInline
-                    muted
+                    loop
                   />
                   <Button
                     variant="secondary"
