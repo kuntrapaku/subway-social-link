@@ -9,7 +9,7 @@ import { CardContent, CardFooter } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Info } from 'lucide-react'
+import { Info, Loader2 } from 'lucide-react'
 
 interface SignUpFormProps {
   getRedirectUrl: () => string
@@ -20,38 +20,67 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [skipEmailConfirmation, setSkipEmailConfirmation] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const { toast } = useToast()
   const navigate = useNavigate()
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMessage(null)
+    
+    if (password.length < 6) {
+      setErrorMessage('Password must be at least 6 characters long')
+      return
+    }
     
     try {
       setLoading(true)
       
+      // Check if user already exists
+      const { data: existingUsers, error: checkError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle()
+      
+      if (checkError) {
+        console.error('Error checking existing user:', checkError)
+      }
+      
       if (skipEmailConfirmation) {
-        const { error: signUpError } = await supabase.auth.signUp({
+        // First try to sign up the user
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
         })
         
-        if (signUpError) throw signUpError
+        if (signUpError) {
+          if (signUpError.message.includes('already registered')) {
+            throw new Error('This email is already registered. Please use a different email or try signing in.')
+          }
+          throw signUpError
+        }
         
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
-        
-        if (signInError) throw signInError
-        
-        toast({
-          title: "Account created",
-          description: "You've been automatically signed in!",
-        })
-        
-        navigate('/')
+        // If signup successful, then sign in
+        if (signUpData.user) {
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          })
+          
+          if (signInError) throw signInError
+          
+          toast({
+            title: "Account created",
+            description: "You've been automatically signed in!",
+          })
+          
+          navigate('/')
+        } else {
+          throw new Error('Failed to create account')
+        }
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -59,7 +88,12 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
           },
         })
 
-        if (error) throw error
+        if (error) {
+          if (error.message.includes('already registered')) {
+            throw new Error('This email is already registered. Please use a different email or try signing in.')
+          }
+          throw error
+        }
         
         toast({
           title: "Check your email",
@@ -67,6 +101,7 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
         })
       }
     } catch (error: any) {
+      setErrorMessage(error.message)
       toast({
         title: "Error",
         description: error.message,
@@ -80,24 +115,38 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
   return (
     <form onSubmit={handleSignUp}>
       <CardContent className="space-y-4 pt-4">
+        {errorMessage && (
+          <Alert variant="destructive" className="border-red-300">
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
+        
         <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
           <Input
+            id="email"
             type="email"
-            placeholder="Email"
+            placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            className="bg-white"
           />
         </div>
+        
         <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
           <Input
+            id="password"
             type="password"
-            placeholder="Password"
+            placeholder="Create a password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={6}
+            className="bg-white"
           />
+          <p className="text-xs text-gray-500">Must be at least 6 characters</p>
         </div>
         
         <div className="flex items-center space-x-2">
@@ -108,7 +157,7 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
               setSkipEmailConfirmation(checked === true)
             }
           />
-          <Label htmlFor="skip-confirmation">
+          <Label htmlFor="skip-confirmation" className="text-sm">
             Skip email confirmation (development only)
           </Label>
         </div>
@@ -123,8 +172,15 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
         )}
       </CardContent>
       <CardFooter>
-        <Button className="w-full" type="submit" disabled={loading}>
-          {loading ? 'Signing up...' : 'Sign Up'}
+        <Button className="w-full bg-orange-500 hover:bg-orange-600" type="submit" disabled={loading}>
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Creating account...
+            </span>
+          ) : (
+            'Create Account'
+          )}
         </Button>
       </CardFooter>
     </form>

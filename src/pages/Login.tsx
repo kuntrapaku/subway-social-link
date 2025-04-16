@@ -6,7 +6,10 @@ const Login = () => {
   return (
     <Layout>
       <div className="container max-w-5xl mx-auto py-10">
-        <Auth />
+        <div className="max-w-md mx-auto">
+          <h1 className="text-2xl font-bold text-center mb-6 text-orange-600">Join MovConnect</h1>
+          <Auth />
+        </div>
       </div>
     </Layout>
   )
