@@ -14,7 +14,8 @@ const Auth = () => {
   
   useEffect(() => {
     if (user && !isLoading) {
-      navigate('/')
+      console.log("User is authenticated, redirecting to home");
+      navigate('/', { replace: true });
     }
   }, [user, isLoading, navigate])
 

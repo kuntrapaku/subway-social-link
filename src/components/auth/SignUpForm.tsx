@@ -67,7 +67,10 @@ const SignUpForm = ({ getRedirectUrl }: SignUpFormProps) => {
           description: "You've been automatically signed in!",
         })
         
-        navigate('/')
+        // Use a short timeout to ensure state updates before navigation
+        setTimeout(() => {
+          navigate('/')
+        }, 100)
       } else {
         const { error } = await supabase.auth.signUp({
           email,
