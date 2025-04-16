@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect } from "react";
-import { Heart, MessageCircle, Share2, MoreHorizontal, User, Play, Pause, RefreshCw } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, User, Play, Pause, RefreshCw, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { toggleFrameLike, addCommentToFrame } from "@/utils/postsStorage";
@@ -18,64 +18,193 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
   const [videoError, setVideoError] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [videoAttempts, setVideoAttempts] = useState(0);
+  const [loadingVideo, setLoadingVideo] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const frameIdRef = useRef(frame.id);
   const { toast } = useToast();
 
-  // Improved debugging for video URLs
+  // Use ref to track if component is mounted
+  const isMounted = useRef(true);
+  
   useEffect(() => {
-    console.log("PlayableFrameCard mounted with frame ID:", frame.id);
-    console.log("Video URL:", frame.imageUrl);
-    console.log("Video URL type:", typeof frame.imageUrl);
-    console.log("Is video flag:", frame.isVideo);
+    // Set mount status
+    isMounted.current = true;
     
-    // Attempt to load the video when component mounts
-    if (hasValidVideo && videoRef.current) {
-      console.log(`Initial load: Trying to play video: ${frame.imageUrl}`);
-      
-      // Force video to reload
-      videoRef.current.load();
-      
-      // Add a short delay before attempting to play
-      const timer = setTimeout(() => {
-        if (videoRef.current) {
-          // Try to play
-          const playPromise = videoRef.current.play();
-          
-          if (playPromise !== undefined) {
-            playPromise
-              .then(() => {
-                console.log("Auto-play successful for video:", frame.imageUrl);
-                setIsPlaying(true);
-                setVideoLoaded(true);
-              })
-              .catch(error => {
-                console.log("Auto-play prevented (this is normal in many browsers):", error);
-                // Don't mark as error since this could be due to browser autoplay policy
-              });
-          }
-        }
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
+    // Update ref when frame ID changes
+    frameIdRef.current = frame.id;
     
     return () => {
-      console.log("PlayableFrameCard unmounting for frame ID:", frame.id);
+      // Set unmount status
+      isMounted.current = false;
+      
+      // Cleanup on unmount
       if (videoRef.current) {
         videoRef.current.pause();
+        videoRef.current.src = "";
+        videoRef.current.load();
       }
     };
-  }, [frame.id, frame.imageUrl]);
+  }, [frame.id]);
 
-  // Reset video element and try again when video URL changes or retry is attempted
+  // Improved video URL validation with more robust checks
+  const validateVideoUrl = (url: string | undefined): boolean => {
+    if (!url) return false;
+    if (typeof url !== 'string') return false;
+    if (url.trim() === '') return false;
+    // Additional checks for invalid placeholders or empty blob URLs
+    if (url.includes('undefined') || url.includes('null') || url.includes('[object Object]')) return false;
+    if (url.startsWith('blob:') && url.length < 20) return false;
+    
+    console.log(`[Frame ${frame.id}] URL validation passed for: ${url}`);
+    return true;
+  };
+
+  // Get validated video URL
+  const videoUrl = validateVideoUrl(frame.imageUrl) ? frame.imageUrl : '';
+  
+  // Main effect for loading and monitoring video
   useEffect(() => {
-    if (videoRef.current && !videoError && hasValidVideo) {
-      console.log(`Attempt ${videoAttempts + 1}: Loading video for frame ID: ${frame.id}`);
-      
-      // Reset video element
-      videoRef.current.load();
+    // Skip if no video or no ref
+    if (!videoUrl || !videoRef.current) {
+      console.log(`[Frame ${frame.id}] No valid video URL or ref`);
+      setLoadingVideo(false);
+      return;
     }
-  }, [frame.imageUrl, videoAttempts, videoError, frame.id]);
+    
+    console.log(`[Frame ${frame.id}] Setting up video: ${videoUrl}`);
+    setLoadingVideo(true);
+    setVideoError(false);
+    
+    const video = videoRef.current;
+    
+    // Define event handlers
+    const handleCanPlay = () => {
+      if (!isMounted.current) return;
+      
+      console.log(`[Frame ${frame.id}] Video can play: ${videoUrl}`);
+      setVideoLoaded(true);
+      setLoadingVideo(false);
+      setVideoError(false);
+      
+      // Try autoplay if the video has just loaded
+      if (video.paused) {
+        console.log(`[Frame ${frame.id}] Attempting autoplay`);
+        const playPromise = video.play();
+        
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              if (isMounted.current) {
+                console.log(`[Frame ${frame.id}] Autoplay succeeded`);
+                setIsPlaying(true);
+              }
+            })
+            .catch(err => {
+              console.log(`[Frame ${frame.id}] Autoplay prevented (expected): ${err.message}`);
+              // This is expected in many browsers, don't report as error
+            });
+        }
+      }
+    };
+    
+    const handleLoadedMetadata = () => {
+      if (!isMounted.current) return;
+      console.log(`[Frame ${frame.id}] Metadata loaded: ${videoUrl}, duration: ${video.duration}s`);
+    };
+    
+    const handleLoadedData = () => {
+      if (!isMounted.current) return;
+      console.log(`[Frame ${frame.id}] Video data loaded: ${videoUrl}`);
+      setVideoLoaded(true);
+    };
+    
+    const handleError = (e: Event) => {
+      if (!isMounted.current) return;
+      
+      const videoElement = e.target as HTMLVideoElement;
+      console.error(`[Frame ${frame.id}] Video error:`, videoElement.error);
+      
+      setVideoError(true);
+      setLoadingVideo(false);
+      setIsPlaying(false);
+      
+      // Only show toast on first error to avoid spamming
+      if (videoAttempts === 0) {
+        toast({
+          title: "Video error",
+          description: `There was a problem loading this video. ${videoElement.error?.message || ''}`,
+          variant: "destructive"
+        });
+      }
+    };
+    
+    const handlePlay = () => {
+      if (isMounted.current) {
+        console.log(`[Frame ${frame.id}] Video playing`);
+        setIsPlaying(true);
+      }
+    };
+    
+    const handlePause = () => {
+      if (isMounted.current) {
+        console.log(`[Frame ${frame.id}] Video paused`);
+        setIsPlaying(false);
+      }
+    };
+    
+    const handleEnded = () => {
+      if (isMounted.current) {
+        console.log(`[Frame ${frame.id}] Video ended`);
+        setIsPlaying(false);
+        // Auto-restart after a brief pause
+        setTimeout(() => {
+          if (isMounted.current && videoRef.current) {
+            videoRef.current.play().catch(err => {
+              console.log(`[Frame ${frame.id}] Auto-restart prevented: ${err.message}`);
+            });
+          }
+        }, 1000);
+      }
+    };
+    
+    // Add all event listeners
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener('loadeddata', handleLoadedData);
+    video.addEventListener('error', handleError);
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('pause', handlePause);
+    video.addEventListener('ended', handleEnded);
+    
+    // Force reload of video with latest URL
+    try {
+      video.load();
+      console.log(`[Frame ${frame.id}] Video loading started: ${videoUrl}`);
+    } catch (err) {
+      console.error(`[Frame ${frame.id}] Load error:`, err);
+      setVideoError(true);
+      setLoadingVideo(false);
+    }
+    
+    // Cleanup function
+    return () => {
+      // Remove all event listeners
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener('loadeddata', handleLoadedData);
+      video.removeEventListener('error', handleError);
+      video.removeEventListener('play', handlePlay);
+      video.removeEventListener('pause', handlePause);
+      video.removeEventListener('ended', handleEnded);
+      
+      // Clean up video element
+      try {
+        video.pause();
+      } catch (e) {
+        // Ignore errors on cleanup
+      }
+    };
+  }, [videoUrl, videoAttempts, frame.id, toast]);
 
   const handleLike = () => {
     toggleFrameLike(frame.id);
@@ -94,68 +223,54 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
   };
 
   const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        console.log("Manual play attempt for frame ID:", frame.id);
-        videoRef.current.play().catch(error => {
-          console.error("Error playing video:", error);
-          setVideoError(true);
-          toast({
-            title: "Video playback error",
-            description: "There was an issue playing this video.",
-            variant: "destructive"
-          });
+    if (!videoRef.current || videoError) return;
+    
+    if (isPlaying) {
+      videoRef.current.pause();
+    } else {
+      console.log(`[Frame ${frame.id}] Manual play attempt`);
+      videoRef.current.play().catch(error => {
+        console.error(`[Frame ${frame.id}] Play error:`, error);
+        setVideoError(true);
+        toast({
+          title: "Video playback error",
+          description: "There was an issue playing this video.",
+          variant: "destructive"
         });
-        setIsPlaying(true);
-      }
+      });
     }
   };
 
   const retryVideo = () => {
-    console.log("Retrying video load for frame ID:", frame.id);
+    console.log(`[Frame ${frame.id}] Retrying video (attempt ${videoAttempts + 1})`);
     setVideoError(false);
     setVideoLoaded(false);
-    setVideoAttempts(videoAttempts + 1);
+    setLoadingVideo(true);
+    setVideoAttempts(prev => prev + 1);
+    
+    // Recreate the video element by forcing a remount
+    if (videoRef.current) {
+      videoRef.current.src = "";
+      setTimeout(() => {
+        if (isMounted.current && videoRef.current && videoUrl) {
+          videoRef.current.src = videoUrl;
+          videoRef.current.load();
+        }
+      }, 100);
+    }
     
     toast({
       title: "Retrying video",
       description: "Attempting to reload the video..."
     });
   };
-
-  const handleVideoError = () => {
-    console.error("Video failed to load:", frame.imageUrl);
-    setVideoError(true);
-    setVideoLoaded(false);
-    setIsPlaying(false);
-  };
-
-  const handleVideoLoad = () => {
-    console.log("Video loaded successfully:", frame.imageUrl);
-    setVideoLoaded(true);
-    setVideoError(false);
-  };
   
   const handleVideoClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    togglePlay();
+    if (videoLoaded && !videoError) {
+      e.preventDefault();
+      togglePlay();
+    }
   };
-
-  // More robust URL validation
-  const hasValidVideo = Boolean(
-    frame.imageUrl && 
-    typeof frame.imageUrl === 'string' && 
-    frame.imageUrl.trim() !== '' &&
-    !frame.imageUrl.includes('undefined') &&
-    !frame.imageUrl.includes('null') &&
-    !frame.imageUrl.includes('[object Object]')
-  );
-
-  // Format video URL safely
-  const videoUrl = hasValidVideo ? frame.imageUrl : '';
 
   return (
     <div className="bg-white rounded-lg shadow-md border border-orange-100 p-4 mb-4 animate-fade-in">
@@ -177,60 +292,65 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
 
       <div className="mt-3">
         <p className="text-sm">{frame.content}</p>
-        {hasValidVideo ? (
-          <div className="mt-3 relative">
-            {videoError ? (
-              <div className="w-full bg-gray-100 rounded-lg p-4 text-center">
-                <p className="text-gray-500">Video could not be loaded</p>
+        
+        <div className="mt-3 relative">
+          {videoError ? (
+            <div className="w-full bg-gray-100 rounded-lg p-6 text-center">
+              <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+              <p className="text-gray-700 mb-2">Video could not be loaded</p>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="mt-2 flex items-center gap-1 mx-auto"
+                onClick={retryVideo}
+              >
+                <RefreshCw className="h-4 w-4" /> Retry Video
+              </Button>
+            </div>
+          ) : !validateVideoUrl(frame.imageUrl) ? (
+            <div className="w-full bg-gray-100 rounded-lg p-6 text-center">
+              <AlertCircle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+              <p className="text-gray-700">No valid video available</p>
+            </div>
+          ) : (
+            <>
+              <video 
+                ref={videoRef}
+                src={videoUrl} 
+                key={`video-${frame.id}-${videoAttempts}`}
+                className="w-full h-auto rounded-lg object-cover"
+                onClick={handleVideoClick}
+                controls
+                playsInline
+                loop
+                muted
+                preload="auto"
+                poster={videoLoaded ? undefined : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"}
+                style={{ 
+                  display: "block",
+                  backgroundColor: "#f8f8f8"
+                }}
+              />
+              
+              {loadingVideo && !videoError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-lg">
+                  <div className="animate-spin h-10 w-10 border-4 border-orange-500 border-t-transparent rounded-full"></div>
+                </div>
+              )}
+              
+              {!isPlaying && videoLoaded && !loadingVideo && (
                 <Button
                   variant="secondary"
-                  size="sm"
-                  className="mt-2 flex items-center gap-1"
-                  onClick={retryVideo}
+                  size="icon"
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full h-14 w-14"
+                  onClick={togglePlay}
                 >
-                  <RefreshCw className="h-4 w-4" /> Retry Video
+                  <Play className="h-7 w-7" />
                 </Button>
-              </div>
-            ) : (
-              <>
-                <video 
-                  ref={videoRef}
-                  src={videoUrl} 
-                  className="w-full h-auto rounded-lg object-cover"
-                  onClick={handleVideoClick}
-                  onPlay={() => setIsPlaying(true)}
-                  onPause={() => setIsPlaying(false)}
-                  onEnded={() => setIsPlaying(false)}
-                  onError={handleVideoError}
-                  onLoadedData={handleVideoLoad}
-                  controls
-                  playsInline
-                  loop
-                  muted
-                />
-                {!isPlaying && !videoLoaded && !videoError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 rounded-lg">
-                    <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full"></div>
-                  </div>
-                )}
-                {!isPlaying && videoLoaded && (
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full h-12 w-12"
-                    onClick={togglePlay}
-                  >
-                    <Play className="h-6 w-6" />
-                  </Button>
-                )}
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="mt-3 p-4 bg-gray-100 rounded-lg text-center">
-            <p className="text-gray-500">No video available</p>
-          </div>
-        )}
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       <div className="mt-4 pt-3 border-t border-gray-100">
