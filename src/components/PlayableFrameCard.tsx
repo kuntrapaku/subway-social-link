@@ -34,6 +34,27 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
     };
   }, [frame]);
 
+  // Additional effect to automatically try playing the video on mount
+  useEffect(() => {
+    // Only attempt to play if video is valid and ref is ready
+    if (videoRef.current && !videoError && hasValidVideo) {
+      console.log("Attempting to auto-play video");
+      const playPromise = videoRef.current.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log("Auto-play successful");
+            setIsPlaying(true);
+          })
+          .catch(error => {
+            console.error("Auto-play prevented:", error);
+            // Don't set error state here - just log the auto-play prevention
+          });
+      }
+    }
+  }, [videoLoaded, videoError]);
+
   const handleLike = () => {
     toggleFrameLike(frame.id);
     
@@ -56,6 +77,7 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
         videoRef.current.pause();
         setIsPlaying(false);
       } else {
+        console.log("Attempting to play video");
         // Add error handling for play
         videoRef.current.play().catch(error => {
           console.error("Error playing video:", error);
@@ -124,6 +146,21 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
             {videoError ? (
               <div className="w-full bg-gray-100 rounded-lg p-4 text-center">
                 <p className="text-gray-500">Video could not be loaded</p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => {
+                    setVideoError(false);
+                    setVideoLoaded(false);
+                    // Force video element to reload
+                    if (videoRef.current) {
+                      videoRef.current.load();
+                    }
+                  }}
+                >
+                  Retry
+                </Button>
               </div>
             ) : (
               <>
@@ -136,10 +173,11 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
                   onEnded={() => setIsPlaying(false)}
                   onError={handleVideoError}
                   onLoadedData={handleVideoLoad}
-                  preload="metadata"
+                  preload="auto" 
                   controls={isPlaying}
                   playsInline
                   loop
+                  autoPlay={false}
                 />
                 <Button
                   variant="secondary"
