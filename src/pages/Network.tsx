@@ -1,4 +1,3 @@
-
 import { Layout } from "@/components/layout/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Users, UserPlus, Mail, Search, Check, X } from "lucide-react";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { 
   getPendingConnectionRequests, 
   searchProfiles, 
@@ -21,6 +20,7 @@ const Network = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -33,15 +33,14 @@ const Network = () => {
 
   // Handle URL search parameters
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const urlSearchQuery = params.get('search');
+    const urlSearchQuery = searchParams.get('search');
     
     if (urlSearchQuery) {
       setSearchQuery(urlSearchQuery);
       setActiveTab("search");
       handleSearch(urlSearchQuery);
     }
-  }, [location.search]);
+  }, [searchParams]);
 
   useEffect(() => {
     if (user) {

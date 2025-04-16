@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { Home, Users, Bell, MessageSquare, User, Menu, Search, LogOut, Settings, HelpCircle, Moon, Film, Send } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -63,9 +62,14 @@ const Navbar = () => {
     
     if (!searchQuery.trim()) return;
     
-    // Navigate to network page with search query
-    navigate(`/network?search=${encodeURIComponent(searchQuery)}`);
+    // Navigate to network page with search query and explicitly set the tab
+    navigate(`/network?search=${encodeURIComponent(searchQuery.trim())}`);
     setSearchQuery("");
+    
+    // Close mobile menu if open
+    if (mobileMenuOpen) {
+      setMobileMenuOpen(false);
+    }
   };
 
   return (
@@ -109,7 +113,7 @@ const Navbar = () => {
               </div>
               <input
                 type="text"
-                className="subway-input pl-10 w-64"
+                className="pl-10 pr-4 py-2 w-64 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 placeholder="Search creators, art..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -212,6 +216,21 @@ const Navbar = () => {
       {mobileMenuOpen && (
         <div className="sm:hidden bg-white border-b border-gray-200">
           <div className="pt-2 pb-3 space-y-1">
+            <form onSubmit={handleSearch} className="px-4 py-2">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  placeholder="Search creators, art..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <button type="submit" className="hidden">Search</button>
+              </div>
+            </form>
             <Link
               to="/"
               className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-orange-300 text-gray-500 hover:text-gray-700 font-medium"
