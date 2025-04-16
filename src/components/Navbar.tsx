@@ -1,12 +1,32 @@
-import { Link } from "react-router-dom";
-import { Home, Users, Bell, MessageSquare, User, Menu, Search, Clapperboard } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Home, Users, Bell, MessageSquare, User, Menu, Search, LogOut, Settings, HelpCircle, Moon, Film, Send } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast.success("Successfully signed out");
+      navigate("/login");
+    } catch (error) {
+      toast.error("Failed to sign out");
+    }
+  };
 
   return (
     <nav className="fixed top-0 w-full bg-white border-b border-subway-100 z-50">
@@ -54,11 +74,78 @@ const Navbar = () => {
               />
             </div>
             {user ? (
-              <Link to="/profile" className="p-1">
-                <div className="h-8 w-8 rounded-full bg-orange-200 flex items-center justify-center">
-                  <User className="h-5 w-5 text-orange-600" />
-                </div>
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-orange-200 to-orange-300 flex items-center justify-center hover:ring-2 hover:ring-orange-400 transition-all duration-200">
+                      <User className="h-5 w-5 text-orange-600" />
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-72" align="end">
+                  <div className="flex items-center gap-2 p-3 border-b border-gray-100">
+                    <div className="h-12 w-12 rounded-full bg-orange-200 flex items-center justify-center">
+                      <User className="h-6 w-6 text-orange-600" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium">Surendra Kuntrapaku</span>
+                      <span className="text-sm text-gray-500">View your profile</span>
+                    </div>
+                  </div>
+                  
+                  <div className="p-2">
+                    <DropdownMenuItem className="flex items-center gap-2 p-3 cursor-pointer">
+                      <Film className="h-5 w-5 text-orange-500" />
+                      <span>Filmmaker Hub</span>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem className="flex items-center gap-2 p-3 cursor-pointer">
+                      <Settings className="h-5 w-5 text-gray-600" />
+                      <span>Settings & privacy</span>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem className="flex items-center gap-2 p-3 cursor-pointer">
+                      <HelpCircle className="h-5 w-5 text-gray-600" />
+                      <span>Help & support</span>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem className="flex items-center gap-2 p-3 cursor-pointer">
+                      <Moon className="h-5 w-5 text-gray-600" />
+                      <span>Display mode</span>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem className="flex items-center gap-2 p-3 cursor-pointer">
+                      <Send className="h-5 w-5 text-gray-600" />
+                      <span>Send feedback</span>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuSeparator />
+                    
+                    <DropdownMenuItem 
+                      className="flex items-center gap-2 p-3 cursor-pointer hover:bg-red-50"
+                      onClick={handleLogout}
+                    >
+                      <div className="p-1 rounded-full bg-red-100">
+                        <LogOut className="h-5 w-5 text-red-600" />
+                      </div>
+                      <span className="font-medium text-red-600">Sign out</span>
+                    </DropdownMenuItem>
+                    
+                    <div className="p-3 text-xs text-gray-500 mt-2 border-t border-gray-100">
+                      <div className="flex flex-wrap gap-1">
+                        <span>Privacy</span>•
+                        <span>Terms</span>•
+                        <span>Advertising</span>•
+                        <span>Cookies</span>•
+                        <span>More</span>
+                      </div>
+                      <div className="mt-1">
+                        © 2025 MovConnect
+                      </div>
+                    </div>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <Link to="/login" className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition">
                 Login
@@ -113,19 +200,30 @@ const Navbar = () => {
               </Link>
             )}
           </div>
-          <div className="pt-4 pb-3 border-t border-gray-200">
-            <div className="flex items-center px-4">
-              <div className="flex-shrink-0">
-                <div className="h-10 w-10 rounded-full bg-orange-200 flex items-center justify-center">
-                  <User className="h-6 w-6 text-orange-600" />
+          {user && (
+            <div className="pt-4 pb-3 border-t border-gray-200">
+              <div className="flex items-center px-4">
+                <div className="flex-shrink-0">
+                  <div className="h-10 w-10 rounded-full bg-orange-200 flex items-center justify-center">
+                    <User className="h-6 w-6 text-orange-600" />
+                  </div>
+                </div>
+                <div className="ml-3">
+                  <div className="text-base font-medium text-gray-800">Surendra Kuntrapaku</div>
+                  <div className="text-sm font-medium text-gray-500">surendra@24frames.in</div>
                 </div>
               </div>
-              <div className="ml-3">
-                <div className="text-base font-medium text-gray-800">Surendra Kuntrapaku</div>
-                <div className="text-sm font-medium text-gray-500">surendra@24frames.in</div>
+              <div className="mt-3 space-y-1 px-2">
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center w-full gap-2 px-3 py-2 text-base font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md"
+                >
+                  <LogOut className="h-5 w-5" />
+                  Sign out
+                </button>
               </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </nav>
