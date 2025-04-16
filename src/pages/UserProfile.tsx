@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getProfileById, Profile } from "@/utils/profiles";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { User, MapPin, Briefcase, Calendar, Link as LinkIcon, Users, MessageSquare, ArrowLeft } from "lucide-react";
+import { User, MapPin, Briefcase, Calendar, Link as LinkIcon, Users, MessageSquare, ArrowLeft, Film } from "lucide-react";
 import ProfileCard from "@/components/ProfileCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
