@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from "react";
-import { Image, Users, Calendar, Video, Play } from "lucide-react";
+import { Video, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Post } from "@/components/NewPost";
@@ -19,7 +19,7 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Log authentication state
+  // Enhanced authentication state logging
   useEffect(() => {
     console.log("NewFrame - Auth state:", user ? "Logged in" : "Not logged in");
   }, [user]);
@@ -34,18 +34,23 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
     };
   }, [videoPreviewUrl]);
 
-  // Reset video state when user auth changes
+  // Complete reset when user auth changes
   useEffect(() => {
-    console.log("Auth state changed, resetting video state");
+    console.log("Auth state changed in NewFrame, resetting video state");
     setIsVideoReady(false);
+    
+    // Cleanup video element
     if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.removeAttribute('src');
-      videoRef.current.load();
+      try {
+        videoRef.current.pause();
+        videoRef.current.removeAttribute('src');
+        videoRef.current.load();
+      } catch (e) {
+        console.error("Error cleaning up video element:", e);
+      }
     }
     
-    // Don't immediately reset videoPreviewUrl to avoid UI jumps
-    // But do recreate it if it exists
+    // Recreate the video URL if needed
     if (videoPreviewUrl && video) {
       try {
         console.log("Recreating video URL after auth change");
@@ -60,9 +65,9 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
     }
   }, [user, video, videoPreviewUrl]);
 
-  // Added effect to validate video playability
+  // Enhanced video playability validation
   useEffect(() => {
-    if (!videoPreviewUrl || !videoRef.current) {
+    if (!videoPreviewUrl || !videoRef.current || !user) {
       return;
     }
     
@@ -87,14 +92,15 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
     video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('error', handleError);
     
-    // Force reload of video element
+    // Force reload of video element with explicit src setting
+    video.src = videoPreviewUrl;
     video.load();
     
     return () => {
       video.removeEventListener('canplay', handleCanPlay);
       video.removeEventListener('error', handleError);
     };
-  }, [videoPreviewUrl, toast]);
+  }, [videoPreviewUrl, toast, user]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,7 +114,7 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
       return;
     }
     
-    // If video file is selected but URL not ready or video is not playable
+    // Enhanced video readiness check
     if (video && (!videoPreviewUrl || !isVideoReady)) {
       toast({
         title: "Video processing",
@@ -220,7 +226,7 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
     }
   };
 
-  // Don't try to show video preview if user is not authenticated
+  // Only show video preview if user is logged in
   const shouldShowVideoPreview = videoPreviewUrl && user;
 
   return (

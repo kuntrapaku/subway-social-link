@@ -1,6 +1,6 @@
 
 import { AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import VideoPlayer from "./VideoPlayer";
 
@@ -16,6 +16,12 @@ const FrameContent = ({ content, imageUrl, id, isVideo }: FrameContentProps) => 
   const [videoAttempts, setVideoAttempts] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const { user } = useAuth();
+
+  // Reset video error state when auth changes
+  useEffect(() => {
+    console.log(`[Frame ${id}] Auth state updated, resetting video error state. User: ${user ? 'logged in' : 'not logged in'}`);
+    setVideoError(false);
+  }, [user, id]);
 
   // Improved video URL validation with more robust checks
   const validateVideoUrl = (url: string | undefined): boolean => {
@@ -39,8 +45,8 @@ const FrameContent = ({ content, imageUrl, id, isVideo }: FrameContentProps) => 
   // Get validated video URL
   const videoUrl = validateVideoUrl(imageUrl) ? imageUrl : '';
   
-  // Don't render video if not authenticated
-  const shouldShowVideo = !!user && isVideo && validateVideoUrl(imageUrl);
+  // Only show video when authenticated and valid URL is available
+  const shouldShowVideo = Boolean(user) && isVideo && validateVideoUrl(imageUrl);
 
   return (
     <div className="mt-3">

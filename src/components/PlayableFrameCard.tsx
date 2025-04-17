@@ -14,10 +14,10 @@ const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
   const frameIdRef = useRef(frame.id);
   const { user } = useAuth();
   
-  // Log authentication state for debugging
+  // Enhanced logging for authentication state and video URL
   useEffect(() => {
-    console.log(`[Frame ${frame.id}] Auth state:`, user ? "Logged in" : "Not logged in");
-    console.log(`[Frame ${frame.id}] Video URL:`, frame.imageUrl);
+    console.log(`[Frame ${frame.id}] PlayableFrameCard - Auth state:`, user ? "Logged in" : "Not logged in");
+    console.log(`[Frame ${frame.id}] PlayableFrameCard - Video URL:`, frame.imageUrl);
     
     // Update ref when frame ID changes
     frameIdRef.current = frame.id;

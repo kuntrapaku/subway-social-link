@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { Play, Pause, RefreshCw, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -27,6 +28,7 @@ const VideoPlayer = ({
   const [loadingVideo, setLoadingVideo] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth(); // Add auth context to track user state
   
   // Use ref to track if component is mounted
   const isMounted = useRef(true);
@@ -34,6 +36,7 @@ const VideoPlayer = ({
   useEffect(() => {
     // Set mount status
     isMounted.current = true;
+    console.log(`[Frame ${frameId}] VideoPlayer mounted, user: ${user ? 'logged in' : 'not logged in'}`);
     
     return () => {
       // Set unmount status
@@ -45,14 +48,43 @@ const VideoPlayer = ({
         videoRef.current.src = "";
         videoRef.current.load();
       }
+      console.log(`[Frame ${frameId}] VideoPlayer unmounted`);
     };
-  }, []);
+  }, [frameId, user]);
+
+  // Reset state when user auth changes
+  useEffect(() => {
+    console.log(`[Frame ${frameId}] Auth state changed in VideoPlayer`);
+    
+    // Reset video states when auth changes
+    setVideoLoaded(false);
+    setLoadingVideo(true);
+    setVideoError(false);
+    
+    // Force reload video element
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause();
+        videoRef.current.src = videoUrl;
+        videoRef.current.load();
+      } catch (err) {
+        console.error(`[Frame ${frameId}] Error reloading video after auth change:`, err);
+      }
+    }
+  }, [user, frameId, videoUrl, setVideoError]);
 
   // Main effect for loading and monitoring video
   useEffect(() => {
     // Skip if no video or no ref
     if (!videoUrl || !videoRef.current) {
       console.log(`[Frame ${frameId}] No valid video URL or ref`);
+      setLoadingVideo(false);
+      return;
+    }
+    
+    // Stop if no user is logged in
+    if (!user) {
+      console.log(`[Frame ${frameId}] User not logged in, not loading video`);
       setLoadingVideo(false);
       return;
     }
@@ -95,6 +127,7 @@ const VideoPlayer = ({
       setLoadingVideo(false);
       setIsPlaying(false);
       
+      // More informative error message
       toast({
         title: "Video error",
         description: `There was a problem loading this video. ${videoElement.error?.message || ''}`,
@@ -134,7 +167,7 @@ const VideoPlayer = ({
     
     // Force reload of video with latest URL
     try {
-      // Explicitly set src attribute - this is key for reloading after auth changes
+      // Explicitly set src attribute and force load
       video.src = videoUrl;
       video.load();
       console.log(`[Frame ${frameId}] Video loading started: ${videoUrl}`);
@@ -162,7 +195,7 @@ const VideoPlayer = ({
         // Ignore errors on cleanup
       }
     };
-  }, [videoUrl, frameId, toast, setVideoError, setIsPlaying]);
+  }, [videoUrl, frameId, toast, setVideoError, setIsPlaying, user]);
 
   const togglePlay = () => {
     if (!videoRef.current || videoError) return;
@@ -226,7 +259,6 @@ const VideoPlayer = ({
         controls
         playsInline
         loop
-        muted
         preload="auto"
         poster={videoLoaded ? undefined : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"}
         style={{ 
