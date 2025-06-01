@@ -12,12 +12,11 @@ import Network from '@/pages/Network';
 import FilmIndustry from '@/pages/FilmIndustry';
 import NotFound from '@/pages/NotFound';
 import UserProfile from '@/pages/UserProfile';
-import { useAuth } from '@/context/AuthContext';
-import { AuthProvider } from '@/context/AuthContext';
+import { TempAuthProvider, useTempAuth } from '@/context/TempAuthContext';
 
-// ProtectedRoute component to handle authentication checks
+// ProtectedRoute component for temporary auth
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading } = useTempAuth();
   
   if (isLoading) {
     return (
@@ -35,7 +34,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 function AppRoutes() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading } = useTempAuth();
 
   return (
     <Routes>
@@ -91,9 +90,9 @@ function AppRoutes() {
 function App() {
   return (
     <Router>
-      <AuthProvider>
+      <TempAuthProvider>
         <AppRoutes />
-      </AuthProvider>
+      </TempAuthProvider>
     </Router>
   );
 }
