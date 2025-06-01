@@ -13,6 +13,8 @@ import FilmIndustry from '@/pages/FilmIndustry';
 import NotFound from '@/pages/NotFound';
 import UserProfile from '@/pages/UserProfile';
 import PublicProfile from '@/pages/PublicProfile';
+import UserManagement from '@/pages/UserManagement';
+import AdminRoute from '@/components/AdminRoute';
 import { TempAuthProvider, useTempAuth } from '@/context/TempAuthContext';
 
 // ProtectedRoute component for temporary auth
@@ -81,6 +83,11 @@ function AppRoutes() {
         <ProtectedRoute>
           <FilmIndustry />
         </ProtectedRoute>
+      } />
+      <Route path="/admin/users" element={
+        <AdminRoute>
+          <UserManagement />
+        </AdminRoute>
       } />
       <Route path="/user/:userId" element={
         <ProtectedRoute>

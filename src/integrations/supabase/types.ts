@@ -99,6 +99,63 @@ export type Database = {
           },
         ]
       }
+      user_invitations: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+        }
+        Relationships: []
+      }
+      users_management: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          role: Database["public"]["Enums"]["user_role"]
+          status: Database["public"]["Enums"]["user_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          role?: Database["public"]["Enums"]["user_role"]
+          status?: Database["public"]["Enums"]["user_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          status?: Database["public"]["Enums"]["user_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -118,6 +175,8 @@ export type Database = {
         | "tiktok"
         | "website"
         | "other"
+      user_role: "admin" | "creator" | "viewer"
+      user_status: "active" | "suspended" | "pending"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -245,6 +304,8 @@ export const Constants = {
         "website",
         "other",
       ],
+      user_role: ["admin", "creator", "viewer"],
+      user_status: ["active", "suspended", "pending"],
     },
   },
 } as const
