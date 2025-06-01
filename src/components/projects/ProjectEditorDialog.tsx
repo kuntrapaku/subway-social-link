@@ -133,8 +133,13 @@ export const ProjectEditorDialog: React.FC<ProjectEditorDialogProps> = ({
         coverImageUrl = uploadResult;
       }
 
+      // Ensure title is always present for create operations
       const projectData = {
-        ...data,
+        title: data.title,
+        description: data.description,
+        trailer_url: data.trailer_url,
+        tags: data.tags,
+        is_public: data.is_public,
         cover_image_url: coverImageUrl,
       };
 

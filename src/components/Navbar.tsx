@@ -49,7 +49,7 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center space-x-4">
-            <NotificationIcon />
+            <NotificationIcon type="general" />
             
             <div className="flex items-center space-x-2">
               <Button asChild variant="ghost" size="sm">
