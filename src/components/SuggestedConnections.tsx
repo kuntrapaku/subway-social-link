@@ -7,6 +7,7 @@ import { sendConnectionRequest, Profile } from "@/utils/profiles";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { toCompatibleUser } from "@/utils/userHelpers";
 
 interface SuggestedConnectionsProps {
   profiles: Profile[];
@@ -31,17 +32,30 @@ const SuggestedConnections = ({ profiles, loading }: SuggestedConnectionsProps) 
 
     try {
       setSendingRequests(prev => ({ ...prev, [profileId]: true }));
-      const success = await sendConnectionRequest(user, profileId);
       
-      if (success) {
-        toast({
-          title: "Connection request sent",
-          description: "Your connection request has been sent successfully.",
-        });
+      // Convert AuthUser to compatible User for connection operations
+      const compatibleUser = toCompatibleUser(user);
+      
+      if (compatibleUser) {
+        const success = await sendConnectionRequest(compatibleUser, profileId);
+        
+        if (success) {
+          toast({
+            title: "Connection request sent",
+            description: "Your connection request has been sent successfully.",
+          });
+        } else {
+          toast({
+            title: "Connection request failed",
+            description: "You may have already sent a request to this user.",
+            variant: "destructive"
+          });
+        }
       } else {
+        // For temp users, show a message that this feature requires a full account
         toast({
-          title: "Connection request failed",
-          description: "You may have already sent a request to this user.",
+          title: "Feature not available",
+          description: "Connecting with other users requires a full account. Please sign up for full access.",
           variant: "destructive"
         });
       }
@@ -102,9 +116,11 @@ const SuggestedConnections = ({ profiles, loading }: SuggestedConnectionsProps) 
             className="text-xs h-8 border-orange-600 text-orange-600 hover:bg-orange-50"
             onClick={(e) => {
               e.stopPropagation();
+              handleConnect(profile.id);
             }}
+            disabled={sendingRequests[profile.id]}
           >
-            Connect
+            {sendingRequests[profile.id] ? "..." : "Connect"}
           </Button>
         </div>
       ))}

@@ -6,6 +6,7 @@ import { EditProfileDialog } from "./EditProfileDialog";
 import { getProfile, saveProfile, updateProfile, Profile as ProfileType } from "@/utils/profiles";
 import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toCompatibleUser, getUserDisplayName } from "@/utils/userHelpers";
 
 interface ProfileCardProps {
   isCurrentUser?: boolean;
@@ -22,10 +23,29 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
     const fetchProfile = async () => {
       setLoading(true);
       try {
-        // If userId is provided and it's not the current user, we would fetch that user's profile
-        // For now, we're only handling the current user's profile
-        const profileData = await getProfile(user);
-        setProfile(profileData);
+        // Convert AuthUser to compatible User for profile operations
+        const compatibleUser = user ? toCompatibleUser(user) : null;
+        
+        if (compatibleUser) {
+          // If userId is provided and it's not the current user, we would fetch that user's profile
+          // For now, we're only handling the current user's profile
+          const profileData = await getProfile(compatibleUser);
+          setProfile(profileData);
+        } else if (user) {
+          // For temp users, create a basic profile display
+          setProfile({
+            id: user.id,
+            name: getUserDisplayName(user),
+            title: "Film Professional",
+            location: "Mumbai, India",
+            connections: 0,
+            company: "",
+            joinDate: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+            website: "",
+            bio: "Welcome to MovConnect!",
+            user_id: user.id
+          });
+        }
       } catch (error) {
         console.error("Error fetching profile:", error);
       } finally {
@@ -52,8 +72,11 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
     if (!user || !profile) return;
     
     try {
-      const newProfile = await updateProfile(user, updatedProfile);
-      setProfile(newProfile);
+      const compatibleUser = toCompatibleUser(user);
+      if (compatibleUser) {
+        const newProfile = await updateProfile(compatibleUser, updatedProfile);
+        setProfile(newProfile);
+      }
     } catch (error) {
       console.error("Error updating profile:", error);
     }

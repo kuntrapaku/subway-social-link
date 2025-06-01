@@ -141,11 +141,24 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
       return;
     }
     
+    // Get user display name - handle both Supabase User and TempUser
+    const getUserDisplayName = () => {
+      if (!user) return "You";
+      
+      if ('username' in user) {
+        // TempUser
+        return user.username;
+      } else {
+        // Supabase User
+        return user.email?.split('@')[0] || "You";
+      }
+    };
+    
     // Create a new frame object with a more unique ID
     const newFrame: Post = {
       id: `frame-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       author: {
-        name: user ? user.email?.split('@')[0] || "You" : "You",
+        name: getUserDisplayName(),
         title: "Filmmaker"
       },
       timeAgo: "Just now",
