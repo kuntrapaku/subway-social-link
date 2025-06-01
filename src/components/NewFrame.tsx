@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Video, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Post } from "@/components/NewPost";
+import { Post } from "@/types/post";
 import { useAuth } from "@/context/AuthContext";
 import { getUserDisplayName } from "@/utils/userHelpers";
 
