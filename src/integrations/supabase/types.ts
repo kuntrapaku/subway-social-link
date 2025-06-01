@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      link_clicks: {
+        Row: {
+          created_at: string
+          id: string
+          link_label: string
+          referrer: string | null
+          timestamp: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link_label: string
+          referrer?: string | null
+          timestamp?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link_label?: string
+          referrer?: string | null
+          timestamp?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           actor_user_id: string | null
@@ -134,6 +164,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      project_views: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          referrer: string | null
+          timestamp: string
+          viewer_user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          referrer?: string | null
+          timestamp?: string
+          viewer_user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          referrer?: string | null
+          timestamp?: string
+          viewer_user_id?: string | null
+        }
+        Relationships: []
       }
       projects: {
         Row: {
@@ -266,6 +323,36 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
           status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      view_logs: {
+        Row: {
+          created_at: string
+          id: string
+          referrer: string | null
+          target_id: string | null
+          timestamp: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referrer?: string | null
+          target_id?: string | null
+          timestamp?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referrer?: string | null
+          target_id?: string | null
+          timestamp?: string
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }

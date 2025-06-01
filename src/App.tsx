@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -11,6 +10,7 @@ import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
 import Network from "./pages/Network";
 import Notifications from "./pages/Notifications";
+import ReportsAnalytics from "./pages/ReportsAnalytics";
 import UserProfile from "./pages/UserProfile";
 import PublicProfile from "./pages/PublicProfile";
 import ProfileBuilder from "./pages/ProfileBuilder";
@@ -42,6 +42,7 @@ function App() {
                   <Route path="messages" element={<Messages />} />
                   <Route path="network" element={<Network />} />
                   <Route path="notifications" element={<Notifications />} />
+                  <Route path="reports" element={<ReportsAnalytics />} />
                   <Route path="user/:userId" element={<UserProfile />} />
                   <Route path="public/:slug" element={<PublicProfile />} />
                   <Route path="profile-builder" element={<ProfileBuilder />} />
