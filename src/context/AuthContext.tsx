@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -31,6 +32,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setIsLoading(false);
+        
+        // Redirect to login page when user signs out
+        if (event === 'SIGNED_OUT') {
+          navigate('/login', { replace: true });
+        }
       }
     );
 
@@ -43,10 +49,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      console.log("Signing out user");
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Error signing out:", error);
+        throw error;
+      }
+      
+      // Clear local state immediately
+      setSession(null);
+      setUser(null);
+      
+      console.log("User signed out successfully");
+    } catch (error) {
+      console.error("Sign out failed:", error);
+      // Even if there's an error, clear local state and redirect
+      setSession(null);
+      setUser(null);
+      navigate('/login', { replace: true });
+    }
   };
 
   const value = {

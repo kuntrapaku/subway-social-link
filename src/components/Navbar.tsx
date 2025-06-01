@@ -1,14 +1,16 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Bell, MessageCircle, Users, Home, User, Film, Briefcase } from 'lucide-react';
+import { Bell, MessageCircle, Users, Home, User, Film, Briefcase, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { NotificationIcon } from './notifications/NotificationIcon';
+import { useToast } from '@/hooks/use-toast';
 
 const Navbar = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { toast } = useToast();
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
@@ -17,6 +19,22 @@ const Navbar = () => {
     { path: '/messages', icon: MessageCircle, label: 'Messages' },
     { path: '/film-industry', icon: Briefcase, label: 'Industry' },
   ];
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed out successfully",
+        description: "You have been logged out of your account.",
+      });
+    } catch (error) {
+      toast({
+        title: "Sign out failed",
+        description: "There was an error signing you out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -59,8 +77,14 @@ const Navbar = () => {
                 </Link>
               </Button>
               
-              <Button variant="outline" size="sm" onClick={() => signOut()}>
-                Sign Out
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleSignOut}
+                className="flex items-center space-x-1"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Sign Out</span>
               </Button>
             </div>
           </div>
