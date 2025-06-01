@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
+import { useToast } from '@/hooks/use-toast'
 
 const TempAuth = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const { toast } = useToast()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -22,7 +23,11 @@ const TempAuth = () => {
     
     if (!username.trim() || !password.trim()) {
       console.log('Validation failed: empty fields')
-      toast.error("Please enter both username and password")
+      toast({
+        title: "Validation Error",
+        description: "Please enter both username and password",
+        variant: "destructive",
+      })
       return
     }
     
@@ -49,20 +54,22 @@ const TempAuth = () => {
         }))
         
         console.log('Login successful, navigating to home')
-        toast.success(`Welcome ${username}!`)
+        toast({
+          title: "Welcome!",
+          description: `Successfully logged in as ${username}`,
+        })
         setLoading(false)
         
         // Navigate to home page with replace to prevent back navigation to login
         navigate('/', { replace: true })
         
-        // Force a page reload to ensure state is properly updated
-        setTimeout(() => {
-          window.location.reload()
-        }, 100)
-        
       } catch (error) {
         console.error('Login error:', error)
-        toast.error('Login failed. Please try again.')
+        toast({
+          title: "Login Failed",
+          description: "Login failed. Please try again.",
+          variant: "destructive",
+        })
         setLoading(false)
       }
     }, 500)

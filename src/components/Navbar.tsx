@@ -42,6 +42,9 @@ const Navbar = () => {
     return null;
   }
 
+  // Get display name for user
+  const displayName = user && 'username' in user ? user.username : 'Profile';
+
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -79,7 +82,7 @@ const Navbar = () => {
               <Button asChild variant="ghost" size="sm">
                 <Link to="/profile">
                   <User className="h-4 w-4 mr-2" />
-                  Profile
+                  {displayName}
                 </Link>
               </Button>
               
