@@ -1,7 +1,7 @@
 
 import React from "react";
 import { CheckCheck, Star, Bell } from "lucide-react";
-import NotificationItem from "./NotificationItem";
+import { NotificationItem } from "./NotificationItem";
 import { NotificationType } from "@/types/notifications";
 
 interface NotificationListProps {
@@ -18,7 +18,7 @@ const NotificationList: React.FC<NotificationListProps> = ({
   let filteredNotifications = notifications;
   
   if (filter === "unread") {
-    filteredNotifications = notifications.filter(n => !n.read);
+    filteredNotifications = notifications.filter(n => !n.is_read);
   } else if (filter === "mentions") {
     filteredNotifications = notifications.filter(n => n.type === 'mention');
   } else if (filter === "likes") {
@@ -68,7 +68,7 @@ const NotificationList: React.FC<NotificationListProps> = ({
         <NotificationItem 
           key={notification.id}
           notification={notification}
-          onClick={onNotificationClick}
+          onMarkAsRead={() => onNotificationClick(notification)}
         />
       ))}
     </div>

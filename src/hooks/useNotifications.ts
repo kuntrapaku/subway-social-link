@@ -10,6 +10,7 @@ export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [lastNotificationTime, setLastNotificationTime] = useState(new Date());
 
   const fetchNotifications = async () => {
     if (!user) return;
@@ -23,8 +24,15 @@ export const useNotifications = () => {
 
       if (error) throw error;
 
-      setNotifications(data || []);
-      setUnreadCount(data?.filter(n => !n.is_read).length || 0);
+      // Type cast the data to ensure proper typing
+      const typedData = (data || []).map(item => ({
+        ...item,
+        type: item.type as Notification['type']
+      })) as Notification[];
+
+      setNotifications(typedData);
+      setUnreadCount(typedData.filter(n => !n.is_read).length);
+      setLastNotificationTime(new Date());
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast.error('Failed to load notifications');
@@ -70,6 +78,29 @@ export const useNotifications = () => {
       console.error('Error marking all notifications as read:', error);
       toast.error('Failed to mark notifications as read');
     }
+  };
+
+  const handleNotificationClick = (notification: Notification): Notification => {
+    if (!notification.is_read) {
+      markAsRead(notification.id);
+    }
+    return { ...notification, is_read: true };
+  };
+
+  const addNotification = (notificationData: Omit<Notification, 'id' | 'created_at' | 'updated_at' | 'is_read'>): Notification => {
+    const newNotification: Notification = {
+      ...notificationData,
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      is_read: false
+    };
+    
+    setNotifications(prev => [newNotification, ...prev]);
+    setUnreadCount(prev => prev + 1);
+    setLastNotificationTime(new Date());
+    
+    return newNotification;
   };
 
   const filterNotifications = (filter: NotificationFilter): Notification[] => {
@@ -167,6 +198,9 @@ export const useNotifications = () => {
     markAsRead,
     markAllAsRead,
     filterNotifications,
-    groupNotificationsByDate
+    groupNotificationsByDate,
+    handleNotificationClick,
+    addNotification,
+    lastNotificationTime
   };
 };

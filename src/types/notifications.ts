@@ -13,6 +13,9 @@ export interface Notification {
   target_type?: string;
 }
 
+// Legacy type alias for backward compatibility
+export type NotificationType = Notification;
+
 export interface NotificationGroup {
   date: string;
   label: string;

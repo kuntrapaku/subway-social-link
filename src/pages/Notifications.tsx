@@ -25,35 +25,11 @@ const Notifications = () => {
     const processedNotification = handleNotificationClick(notification);
     
     // Now handle navigation
-    if (processedNotification.actionUrl) {
-      // If there's a specific URL to navigate to
-      navigate(processedNotification.actionUrl);
+    if (processedNotification.link) {
+      navigate(processedNotification.link);
       toast({
         title: "Navigating",
-        description: `Viewing ${processedNotification.content}`,
-      });
-    } else if (processedNotification.type === "connection") {
-      navigate("/network");
-      toast({
-        title: "Film Artist",
-        description: `Viewing your connection with ${processedNotification.user}`,
-      });
-    } else if (processedNotification.postId) {
-      // We're using a query parameter to identify which post to show
-      // In a real app, this would likely be a route parameter
-      navigate(`/?postId=${processedNotification.postId}`);
-      
-      let toastDescription = `Viewing post related to ${processedNotification.user}'s activity`;
-      
-      if (processedNotification.commentId) {
-        toastDescription = `Viewing ${processedNotification.user}'s comment`;
-      } else if (processedNotification.type === "like") {
-        toastDescription = `Viewing post liked by ${processedNotification.user}`;
-      }
-      
-      toast({
-        title: "Post View",
-        description: toastDescription,
+        description: `Viewing notification content`,
       });
     }
   };

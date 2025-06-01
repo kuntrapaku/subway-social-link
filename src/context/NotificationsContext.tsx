@@ -9,7 +9,7 @@ interface NotificationsContextType {
   markAllAsRead: () => void;
   markAsRead: (id: string) => void;
   handleNotificationClick: (notification: NotificationType) => NotificationType;
-  addNotification: (notification: Omit<NotificationType, 'id' | 'time' | 'read'>) => NotificationType;
+  addNotification: (notification: Omit<NotificationType, 'id' | 'created_at' | 'updated_at' | 'is_read'>) => NotificationType;
   lastNotificationTime: Date;
 }
 
