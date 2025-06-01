@@ -11,6 +11,7 @@ import Messages from "./pages/Messages";
 import Network from "./pages/Network";
 import Notifications from "./pages/Notifications";
 import ReportsAnalytics from "./pages/ReportsAnalytics";
+import HelpSupport from "./pages/HelpSupport";
 import UserProfile from "./pages/UserProfile";
 import PublicProfile from "./pages/PublicProfile";
 import ProfileBuilder from "./pages/ProfileBuilder";
@@ -43,6 +44,7 @@ function App() {
                   <Route path="network" element={<Network />} />
                   <Route path="notifications" element={<Notifications />} />
                   <Route path="reports" element={<ReportsAnalytics />} />
+                  <Route path="help" element={<HelpSupport />} />
                   <Route path="user/:userId" element={<UserProfile />} />
                   <Route path="public/:slug" element={<PublicProfile />} />
                   <Route path="profile-builder" element={<ProfileBuilder />} />
