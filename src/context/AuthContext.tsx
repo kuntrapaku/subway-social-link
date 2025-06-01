@@ -25,6 +25,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("Setting up auth state listener");
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -33,27 +35,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         setIsLoading(false);
         
-        // Redirect to login page when user signs out
+        // Handle sign out event
         if (event === 'SIGNED_OUT') {
+          console.log("User signed out, redirecting to login");
           navigate('/login', { replace: true });
         }
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error("Error getting session:", error);
+      }
       console.log("Initial session check:", session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log("Cleaning up auth subscription");
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const signOut = async () => {
     try {
-      console.log("Signing out user");
+      console.log("Initiating sign out");
+      setIsLoading(true);
+      
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Error signing out:", error);
@@ -67,10 +78,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("User signed out successfully");
     } catch (error) {
       console.error("Sign out failed:", error);
-      // Even if there's an error, clear local state and redirect
+      // Even if there's an error, clear local state
       setSession(null);
       setUser(null);
-      navigate('/login', { replace: true });
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -84,4 +97,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

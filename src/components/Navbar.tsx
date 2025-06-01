@@ -28,6 +28,7 @@ const Navbar = () => {
         description: "You have been logged out of your account.",
       });
     } catch (error) {
+      console.error("Sign out error:", error);
       toast({
         title: "Sign out failed",
         description: "There was an error signing you out. Please try again.",
@@ -35,6 +36,11 @@ const Navbar = () => {
       });
     }
   };
+
+  // Don't render navbar if user is not authenticated
+  if (!user) {
+    return null;
+  }
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
