@@ -45,22 +45,33 @@ const FrameContent = ({ content, imageUrl, id, isVideo }: FrameContentProps) => 
   // Get validated video URL
   const videoUrl = validateVideoUrl(imageUrl) ? imageUrl : '';
   
-  // Only show video when authenticated and valid URL is available
-  const shouldShowVideo = Boolean(user) && isVideo && validateVideoUrl(imageUrl);
+  // Show video when valid URL is available (regardless of auth for posts, only frames require auth)
+  const shouldShowVideo = isVideo && validateVideoUrl(imageUrl);
+  const shouldShowVideoPlayer = shouldShowVideo && (user || !id.startsWith('frame-'));
 
   return (
     <div className="mt-3">
       <p className="text-sm">{content}</p>
       
+      {imageUrl && !isVideo && (
+        <div className="mt-3">
+          <img 
+            src={imageUrl} 
+            alt="Post content" 
+            className="w-full h-auto rounded-lg object-cover max-h-96" 
+          />
+        </div>
+      )}
+      
       <div className="mt-3 relative">
-        {!shouldShowVideo && isVideo ? (
+        {!shouldShowVideoPlayer && isVideo ? (
           <div className="w-full bg-gray-100 rounded-lg p-6 text-center">
             <AlertCircle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
             <p className="text-gray-700">
-              {!user ? "Sign in to view videos" : "No valid video available"}
+              {!user && id.startsWith('frame-') ? "Sign in to view video frames" : "No valid video available"}
             </p>
           </div>
-        ) : shouldShowVideo ? (
+        ) : shouldShowVideoPlayer ? (
           <VideoPlayer 
             videoUrl={videoUrl}
             frameId={id}

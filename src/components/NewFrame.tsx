@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Post } from "@/components/NewPost";
 import { useAuth } from "@/context/AuthContext";
+import { getUserDisplayName } from "@/utils/userHelpers";
 
 interface NewFrameProps {
   onFrameCreated?: (frame: Post) => void;
@@ -141,24 +142,11 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
       return;
     }
     
-    // Get user display name - handle both Supabase User and TempUser
-    const getUserDisplayName = () => {
-      if (!user) return "You";
-      
-      if ('username' in user) {
-        // TempUser
-        return user.username;
-      } else {
-        // Supabase User
-        return user.email?.split('@')[0] || "You";
-      }
-    };
-    
     // Create a new frame object with a more unique ID
     const newFrame: Post = {
       id: `frame-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       author: {
-        name: getUserDisplayName(),
+        name: user ? getUserDisplayName(user) : "You",
         title: "Filmmaker"
       },
       timeAgo: "Just now",

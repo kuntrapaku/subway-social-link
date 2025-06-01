@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { Image, Users, Calendar, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { getUserDisplayName } from "@/utils/userHelpers";
 
 // Define the Post type to match what's used in the Index page
 export interface Post {
@@ -33,6 +35,7 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Clean up any object URLs on unmount to prevent memory leaks
   useEffect(() => {
@@ -70,9 +73,9 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
     
     // Create a new post object
     const newPost: Post = {
-      id: Date.now().toString(), // Generate a unique ID based on timestamp
+      id: `post-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       author: {
-        name: "You", // In a real app, this would come from authenticated user
+        name: user ? getUserDisplayName(user) : "You",
         title: "Artist"
       },
       timeAgo: "Just now",
@@ -83,6 +86,9 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
       isLiked: false,
       isVideo: video !== null // Set isVideo flag based on whether a video was selected
     };
+    
+    console.log("Created new post:", newPost);
+    console.log("Post media URL:", newPost.imageUrl);
     
     // Call the callback to add the post to the timeline
     if (onPostCreated) {
@@ -112,6 +118,8 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedVideo = e.target.files[0];
+      console.log("Video selected in NewPost:", selectedVideo.name, "Size:", selectedVideo.size, "Type:", selectedVideo.type);
+      
       setVideo(selectedVideo);
       setImage(null); // Clear image if a video is selected
       
@@ -127,20 +135,31 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
       }
       
       // Create video preview URL
-      const videoUrl = URL.createObjectURL(selectedVideo);
-      setVideoPreviewUrl(videoUrl);
-      console.log("Video selected, URL created:", videoUrl);
-      
-      toast({
-        title: "Video selected",
-        description: "Your video has been selected. Click Share Art to post.",
-      });
+      try {
+        const videoUrl = URL.createObjectURL(selectedVideo);
+        setVideoPreviewUrl(videoUrl);
+        console.log("Video URL created in NewPost:", videoUrl);
+        
+        toast({
+          title: "Video selected",
+          description: "Your video has been selected. Click Share Art to post.",
+        });
+      } catch (error) {
+        console.error("Error creating video URL in NewPost:", error);
+        toast({
+          title: "Video error",
+          description: "Failed to process video. Please try another one.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedImage = e.target.files[0];
+      console.log("Image selected in NewPost:", selectedImage.name, "Size:", selectedImage.size, "Type:", selectedImage.type);
+      
       setImage(selectedImage);
       setVideo(null); // Clear video if an image is selected
       
@@ -156,8 +175,23 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
       }
       
       // Create image preview URL
-      const imageUrl = URL.createObjectURL(selectedImage);
-      setImagePreviewUrl(imageUrl);
+      try {
+        const imageUrl = URL.createObjectURL(selectedImage);
+        setImagePreviewUrl(imageUrl);
+        console.log("Image URL created in NewPost:", imageUrl);
+        
+        toast({
+          title: "Image selected",
+          description: "Your image has been selected. Click Share Art to post.",
+        });
+      } catch (error) {
+        console.error("Error creating image URL in NewPost:", error);
+        toast({
+          title: "Image error",
+          description: "Failed to process image. Please try another one.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -209,6 +243,9 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
               src={videoPreviewUrl} 
               className="w-full h-auto rounded-lg object-cover max-h-60"
               controls
+              playsInline
+              muted
+              preload="metadata"
             />
             <Button 
               variant="destructive"
