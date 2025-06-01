@@ -1,14 +1,22 @@
 
-export interface NotificationType {
+export interface Notification {
   id: string;
-  type: "like" | "comment" | "connection" | "mention" | "other";
-  content: string;
-  user: string;
-  time: string;
-  read: boolean;
-  postId?: string; // ID of the related post if applicable
-  userId?: string; // ID of the user who triggered the notification
-  commentId?: string; // ID of the comment if applicable
-  connectionId?: string; // ID of the connection if applicable
-  actionUrl?: string; // URL to navigate to when notification is clicked
+  user_id: string;
+  type: 'follow' | 'invite' | 'comment' | 'like' | 'mention' | 'connection';
+  message: string;
+  link?: string;
+  is_read: boolean;
+  created_at: string;
+  updated_at: string;
+  actor_user_id?: string;
+  target_id?: string;
+  target_type?: string;
 }
+
+export interface NotificationGroup {
+  date: string;
+  label: string;
+  notifications: Notification[];
+}
+
+export type NotificationFilter = 'all' | 'mentions' | 'invites' | 'comments';

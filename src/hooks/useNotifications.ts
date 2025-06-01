@@ -1,93 +1,172 @@
 
-import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { NotificationType } from "@/types/notifications";
-import { mockNotifications } from "./notifications/mockNotifications";
-import { generateNewNotification, createNotification } from "./notifications/notificationUtils";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { Notification, NotificationGroup, NotificationFilter } from '@/types/notifications';
+import { toast } from 'sonner';
 
 export const useNotifications = () => {
-  const { toast } = useToast();
-  const [notifications, setNotifications] = useState<NotificationType[]>(mockNotifications);
-  const [lastNotificationTime, setLastNotificationTime] = useState<Date>(new Date());
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  // In a real app, this would be a websocket connection or polling to get new notifications
-  useEffect(() => {
-    const checkForNewNotifications = () => {
-      // Simulate getting new notifications every so often (random interval)
-      const randomTime = Math.floor(Math.random() * 300000) + 60000; // Between 1-5 minutes
-      
-      const timer = setTimeout(() => {
-        // In a real app, this would be an API call to get new notifications
-        const newNotification = generateNewNotification();
-        
-        setNotifications(prev => [newNotification, ...prev]);
-        setLastNotificationTime(new Date());
-        
-        // Display a toast for the new notification
-        toast({
-          title: "New notification",
-          description: `${newNotification.user} ${newNotification.content}`,
+  const fetchNotifications = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setNotifications(data || []);
+      setUnreadCount(data?.filter(n => !n.is_read).length || 0);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      toast.error('Failed to load notifications');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const markAsRead = async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true, updated_at: new Date().toISOString() })
+        .eq('id', notificationId);
+
+      if (error) throw error;
+
+      setNotifications(prev => 
+        prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+
+      if (error) throw error;
+
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+      toast.success('All notifications marked as read');
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      toast.error('Failed to mark notifications as read');
+    }
+  };
+
+  const filterNotifications = (filter: NotificationFilter): Notification[] => {
+    switch (filter) {
+      case 'mentions':
+        return notifications.filter(n => n.type === 'mention');
+      case 'invites':
+        return notifications.filter(n => n.type === 'invite');
+      case 'comments':
+        return notifications.filter(n => n.type === 'comment');
+      default:
+        return notifications;
+    }
+  };
+
+  const groupNotificationsByDate = (filteredNotifications: Notification[]): NotificationGroup[] => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const groups: { [key: string]: NotificationGroup } = {};
+
+    filteredNotifications.forEach(notification => {
+      const notifDate = new Date(notification.created_at);
+      let groupKey: string;
+      let label: string;
+
+      if (notifDate.toDateString() === today.toDateString()) {
+        groupKey = 'today';
+        label = 'Today';
+      } else if (notifDate.toDateString() === yesterday.toDateString()) {
+        groupKey = 'yesterday';
+        label = 'Yesterday';
+      } else {
+        groupKey = notifDate.toDateString();
+        label = notifDate.toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          month: 'short', 
+          day: 'numeric' 
         });
-        
-        // Schedule the next check
-        checkForNewNotifications();
-      }, randomTime);
-      
-      return () => clearTimeout(timer);
-    };
-    
-    // Start the checking process
-    const cleanup = checkForNewNotifications();
-    
-    return cleanup;
-  }, [toast]);
+      }
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
-    toast({
-      title: "All notifications marked as read",
-      description: "You have no unread notifications",
+      if (!groups[groupKey]) {
+        groups[groupKey] = {
+          date: groupKey,
+          label,
+          notifications: []
+        };
+      }
+
+      groups[groupKey].notifications.push(notification);
+    });
+
+    return Object.values(groups).sort((a, b) => {
+      if (a.date === 'today') return -1;
+      if (b.date === 'today') return 1;
+      if (a.date === 'yesterday') return -1;
+      if (b.date === 'yesterday') return 1;
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notif => notif.id === id ? { ...notif, read: true } : notif)
-    );
-  };
+  useEffect(() => {
+    fetchNotifications();
 
-  // This function will be provided by a wrapper component that has access to navigation
-  const handleNotificationClick = (notification: NotificationType) => {
-    // Mark the notification as read
-    markAsRead(notification.id);
-    
-    // We'll return the notification so the wrapper can handle navigation
-    return notification;
-  };
+    // Set up real-time subscription
+    if (user) {
+      const channel = supabase
+        .channel('notifications-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${user.id}`
+          },
+          () => {
+            fetchNotifications();
+          }
+        )
+        .subscribe();
 
-  const addNotification = (notification: Omit<NotificationType, 'id' | 'time' | 'read'>) => {
-    const newNotification = createNotification(notification);
-    
-    setNotifications(prev => [newNotification, ...prev]);
-    setLastNotificationTime(new Date());
-    
-    toast({
-      title: "New notification",
-      description: `${newNotification.user} ${newNotification.content}`,
-    });
-    
-    return newNotification;
-  };
-
-  const unreadCount = notifications.filter(n => !n.read).length;
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user]);
 
   return {
     notifications,
+    loading,
     unreadCount,
-    markAllAsRead,
+    fetchNotifications,
     markAsRead,
-    handleNotificationClick,
-    addNotification,
-    lastNotificationTime
+    markAllAsRead,
+    filterNotifications,
+    groupNotificationsByDate
   };
 };

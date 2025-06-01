@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Home, Users, Bell, MessageSquare, User, Menu, Search, LogOut, Settings, HelpCircle, Moon, Film, Send } from "lucide-react";
+import { Home, Users, MessageSquare, User, Menu, Search, LogOut, Settings, HelpCircle, Moon, Film, Send } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { getProfile, Profile } from "@/utils/profiles";
+import { ResponsiveNotifications } from "@/components/notifications/ResponsiveNotifications";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -100,10 +101,7 @@ const Navbar = () => {
                 <MessageSquare className="h-5 w-5 mr-1" />
                 <span>Messages</span>
               </Link>
-              <Link to="/notifications" className="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-orange-600">
-                <Bell className="h-5 w-5 mr-1" />
-                <span>Notifications</span>
-              </Link>
+              <ResponsiveNotifications className="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-orange-600" />
             </div>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-4">
@@ -249,12 +247,9 @@ const Navbar = () => {
             >
               Messages
             </Link>
-            <Link
-              to="/notifications"
-              className="block pl-3 pr-4 py-2 border-l-4 border-transparent hover:bg-gray-50 hover:border-orange-300 text-gray-500 hover:text-gray-700 font-medium"
-            >
-              Notifications
-            </Link>
+            <div className="pl-3 pr-4 py-2">
+              <ResponsiveNotifications />
+            </div>
             {!user && (
               <Link
                 to="/login"

@@ -1,78 +1,58 @@
 
-import React from "react";
-import { Heart, MessageSquare, Users, Star, Bell, Clock, ArrowRight } from "lucide-react";
-import { NotificationType } from "@/types/notifications";
-import { Button } from "@/components/ui/button";
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card } from '@/components/ui/card';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Notification } from '@/types/notifications';
+import { NotificationIcon } from './NotificationIcon';
+import { formatDistanceToNow } from 'date-fns';
 
 interface NotificationItemProps {
-  notification: NotificationType;
-  onClick: (notification: NotificationType) => void;
+  notification: Notification;
+  onMarkAsRead: (id: string) => void;
 }
 
-export const getNotificationIcon = (type: string) => {
-  switch (type) {
-    case "like":
-      return <Heart className="h-5 w-5 text-red-500" />;
-    case "comment":
-      return <MessageSquare className="h-5 w-5 text-blue-500" />;
-    case "connection":
-      return <Users className="h-5 w-5 text-green-500" />;
-    case "mention":
-      return <Star className="h-5 w-5 text-yellow-500" />;
-    default:
-      return <Bell className="h-5 w-5 text-orange-500" />;
-  }
-};
+export const NotificationItem: React.FC<NotificationItemProps> = ({ 
+  notification, 
+  onMarkAsRead 
+}) => {
+  const navigate = useNavigate();
 
-const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onClick }) => {
   const handleClick = () => {
-    onClick(notification);
-  };
-
-  const getActionText = () => {
-    switch (notification.type) {
-      case "like":
-        return "View post";
-      case "comment":
-        return "View comment";
-      case "connection":
-        return "View artist";
-      case "mention":
-        return "View mention";
-      default:
-        return "View details";
+    if (!notification.is_read) {
+      onMarkAsRead(notification.id);
+    }
+    
+    if (notification.link) {
+      navigate(notification.link);
     }
   };
 
+  const timeAgo = formatDistanceToNow(new Date(notification.created_at), { addSuffix: true });
+
   return (
-    <div 
-      className={`p-4 rounded-lg border ${notification.read ? 'bg-white border-gray-200' : 'bg-orange-50 border-orange-200'} transition-colors duration-200 hover:bg-orange-100 cursor-pointer`}
+    <Card 
+      className={`p-4 cursor-pointer transition-all duration-200 hover:bg-gray-50 ${
+        !notification.is_read ? 'border-l-4 border-l-orange-500 bg-orange-50/30' : ''
+      }`}
       onClick={handleClick}
-      data-testid="notification-item"
     >
-      <div className="flex">
-        <div className="mr-4 mt-1">
-          {getNotificationIcon(notification.type)}
+      <div className="flex items-start space-x-3">
+        <div className="flex-shrink-0">
+          <NotificationIcon type={notification.type} />
         </div>
-        <div className="flex-1">
-          <div className="flex justify-between">
-            <p className="font-medium">{notification.user}</p>
-            <div className="flex items-center text-gray-500 text-sm">
-              <Clock className="h-3 w-3 mr-1" />
-              {notification.time}
-            </div>
-          </div>
-          <p className="text-gray-600">{notification.content}</p>
-          {(notification.postId || notification.type === "connection" || notification.actionUrl) && (
-            <div className="mt-1 text-orange-600 text-sm flex items-center">
-              <span>{getActionText()}</span>
-              <ArrowRight className="h-3 w-3 ml-1" />
-            </div>
-          )}
+        
+        <div className="flex-1 min-w-0">
+          <p className={`text-sm ${!notification.is_read ? 'font-medium' : 'font-normal'}`}>
+            {notification.message}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">{timeAgo}</p>
         </div>
+
+        {!notification.is_read && (
+          <div className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0 mt-2"></div>
+        )}
       </div>
-    </div>
+    </Card>
   );
 };
-
-export default NotificationItem;
