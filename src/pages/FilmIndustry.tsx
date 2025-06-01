@@ -19,7 +19,7 @@ const FilmIndustry = () => {
   const isMobile = useIsMobile();
   
   return (
-    <div className="relative overflow-hidden pt-20 pb-10">
+    <div className="relative overflow-hidden py-10">
       {/* Hero Banner with Parallax Effect */}
       <div className="absolute inset-0 z-0 bg-gradient-to-r from-black to-subway-800 opacity-90">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1585951237318-9ea5e175b891?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80')] bg-cover bg-center opacity-40"></div>

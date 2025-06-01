@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import Navbar from "@/components/Navbar";
 import { Card } from "@/components/ui/card";
 import { User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -86,8 +85,7 @@ const Messages = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card className="p-0 overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-3 h-[600px]">
             {/* Conversations sidebar - show based on mobile state */}
