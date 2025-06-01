@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Layout } from '@/components/layout/Layout';
@@ -365,7 +364,6 @@ const UserManagement = () => {
                             <Switch
                               checked={user.status === 'active'}
                               onCheckedChange={() => toggleUserStatus(user.id, user.status)}
-                              size="sm"
                             />
                           )}
                         </div>
