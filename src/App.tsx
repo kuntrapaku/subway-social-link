@@ -12,6 +12,7 @@ import Network from '@/pages/Network';
 import FilmIndustry from '@/pages/FilmIndustry';
 import NotFound from '@/pages/NotFound';
 import UserProfile from '@/pages/UserProfile';
+import PublicProfile from '@/pages/PublicProfile';
 import { TempAuthProvider, useTempAuth } from '@/context/TempAuthContext';
 
 // ProtectedRoute component for temporary auth
@@ -42,6 +43,10 @@ function AppRoutes() {
         user && !isLoading ? <Navigate to="/" replace /> : <Login />
       } />
       <Route path="/auth/callback" element={<AuthCallback />} />
+      
+      {/* Public profile route - accessible without authentication */}
+      <Route path="/:slug" element={<PublicProfile />} />
+      
       <Route path="/" element={
         <ProtectedRoute>
           <Index />
