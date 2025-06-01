@@ -1,78 +1,95 @@
 
-import { NotificationType } from "@/types/notifications";
+import { Notification } from "@/types/notifications";
 
 // Mock notifications data - in a real app, this would come from an API
-export const mockNotifications: NotificationType[] = [
+export const mockNotifications: Notification[] = [
   {
     id: "1",
+    user_id: "current_user",
     type: "like",
-    content: "liked your artwork 'Mumbai Sunset Scene'",
-    user: "Vikram Patel",
-    time: "2 hours ago",
-    read: false,
-    postId: "1",
-    userId: "vp123"
+    message: "Vikram Patel liked your artwork 'Mumbai Sunset Scene'",
+    link: "/posts/1",
+    is_read: false,
+    created_at: "2024-06-01T16:00:00Z",
+    updated_at: "2024-06-01T16:00:00Z",
+    actor_user_id: "vp123",
+    target_id: "1",
+    target_type: "post"
   },
   {
     id: "2",
+    user_id: "current_user",
     type: "comment",
-    content: "commented on your post: 'This is amazing work! The lighting is perfect.'",
-    user: "Priya Sharma",
-    time: "5 hours ago",
-    read: false,
-    postId: "1",
-    commentId: "c123",
-    userId: "ps456"
+    message: "Priya Sharma commented on your post: 'This is amazing work! The lighting is perfect.'",
+    link: "/posts/1",
+    is_read: false,
+    created_at: "2024-06-01T13:00:00Z",
+    updated_at: "2024-06-01T13:00:00Z",
+    actor_user_id: "ps456",
+    target_id: "1",
+    target_type: "post"
   },
   {
     id: "3",
+    user_id: "current_user",
     type: "connection",
-    content: "accepted your connection request",
-    user: "Arjun Kapoor",
-    time: "1 day ago",
-    read: true,
-    connectionId: "con123",
-    userId: "ak789"
+    message: "Arjun Kapoor accepted your connection request",
+    link: "/profile/arjun-kapoor",
+    is_read: true,
+    created_at: "2024-05-31T10:00:00Z",
+    updated_at: "2024-05-31T10:00:00Z",
+    actor_user_id: "ak789",
+    target_id: "ak789",
+    target_type: "user"
   },
   {
     id: "4",
+    user_id: "current_user",
     type: "mention",
-    content: "mentioned you in a comment: '@SurendraK check out this new camera setup!'",
-    user: "Rahul Singh",
-    time: "2 days ago",
-    read: true,
-    postId: "3",
-    commentId: "c456",
-    userId: "rs101"
+    message: "Rahul Singh mentioned you in a comment: '@SurendraK check out this new camera setup!'",
+    link: "/posts/3",
+    is_read: true,
+    created_at: "2024-05-30T14:00:00Z",
+    updated_at: "2024-05-30T14:00:00Z",
+    actor_user_id: "rs101",
+    target_id: "3",
+    target_type: "post"
   },
   {
     id: "5",
+    user_id: "current_user",
     type: "like",
-    content: "liked your post about the new RED camera",
-    user: "Deepika Reddy",
-    time: "3 days ago",
-    read: true,
-    postId: "2",
-    userId: "dr202"
+    message: "Deepika Reddy liked your post about the new RED camera",
+    link: "/posts/2",
+    is_read: true,
+    created_at: "2024-05-29T09:00:00Z",
+    updated_at: "2024-05-29T09:00:00Z",
+    actor_user_id: "dr202",
+    target_id: "2",
+    target_type: "post"
   },
   {
     id: "6",
+    user_id: "current_user",
     type: "comment",
-    content: "commented on your art: 'This frame composition is breathtaking!'",
-    user: "Amit Kumar",
-    time: "3 days ago",
-    read: true,
-    postId: "2",
-    commentId: "c789",
-    userId: "ak303"
+    message: "Amit Kumar commented on your art: 'This frame composition is breathtaking!'",
+    link: "/posts/2",
+    is_read: true,
+    created_at: "2024-05-29T08:00:00Z",
+    updated_at: "2024-05-29T08:00:00Z",
+    actor_user_id: "ak303",
+    target_id: "2",
+    target_type: "post"
   },
   {
     id: "7",
-    type: "other",
-    content: "Your artwork was featured in 'Top Indian Film Artists' collection",
-    user: "MovConnect Team",
-    time: "4 days ago",
-    read: true,
-    actionUrl: "/featured"
+    user_id: "current_user",
+    type: "invite",
+    message: "Your artwork was featured in 'Top Indian Film Artists' collection",
+    link: "/featured",
+    is_read: true,
+    created_at: "2024-05-28T12:00:00Z",
+    updated_at: "2024-05-28T12:00:00Z",
+    target_type: "feature"
   }
 ];
