@@ -5,6 +5,7 @@ import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import AuthCallback from '@/pages/AuthCallback';
 import Profile from '@/pages/Profile';
+import ProfileBuilder from '@/pages/ProfileBuilder';
 import Messages from '@/pages/Messages';
 import Notifications from '@/pages/Notifications';
 import Network from '@/pages/Network';
@@ -50,6 +51,11 @@ function AppRoutes() {
       <Route path="/profile" element={
         <ProtectedRoute>
           <Profile />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile-builder" element={
+        <ProtectedRoute>
+          <ProfileBuilder />
         </ProtectedRoute>
       } />
       <Route path="/messages" element={

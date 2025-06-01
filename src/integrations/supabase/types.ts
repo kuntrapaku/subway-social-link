@@ -9,7 +9,96 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      profile_builder: {
+        Row: {
+          background_type: Database["public"]["Enums"]["background_type"] | null
+          background_value: string | null
+          bio: string | null
+          created_at: string | null
+          display_name: string | null
+          font_type: Database["public"]["Enums"]["font_type"] | null
+          id: string
+          is_published: boolean | null
+          profile_picture_url: string | null
+          theme_color: string | null
+          updated_at: string | null
+          url_slug: string | null
+          user_id: string
+        }
+        Insert: {
+          background_type?:
+            | Database["public"]["Enums"]["background_type"]
+            | null
+          background_value?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          font_type?: Database["public"]["Enums"]["font_type"] | null
+          id?: string
+          is_published?: boolean | null
+          profile_picture_url?: string | null
+          theme_color?: string | null
+          updated_at?: string | null
+          url_slug?: string | null
+          user_id: string
+        }
+        Update: {
+          background_type?:
+            | Database["public"]["Enums"]["background_type"]
+            | null
+          background_value?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          font_type?: Database["public"]["Enums"]["font_type"] | null
+          id?: string
+          is_published?: boolean | null
+          profile_picture_url?: string | null
+          theme_color?: string | null
+          updated_at?: string | null
+          url_slug?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      social_links: {
+        Row: {
+          created_at: string | null
+          display_order: number
+          id: string
+          label: string
+          platform: Database["public"]["Enums"]["social_platform"]
+          profile_id: string
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          label: string
+          platform: Database["public"]["Enums"]["social_platform"]
+          profile_id: string
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          label?: string
+          platform?: Database["public"]["Enums"]["social_platform"]
+          profile_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_links_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile_builder"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +107,17 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      background_type: "solid" | "gradient" | "image"
+      font_type: "inter" | "poppins" | "roboto" | "open-sans" | "playfair"
+      social_platform:
+        | "instagram"
+        | "imdb"
+        | "youtube"
+        | "vimeo"
+        | "x"
+        | "tiktok"
+        | "website"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +232,19 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      background_type: ["solid", "gradient", "image"],
+      font_type: ["inter", "poppins", "roboto", "open-sans", "playfair"],
+      social_platform: [
+        "instagram",
+        "imdb",
+        "youtube",
+        "vimeo",
+        "x",
+        "tiktok",
+        "website",
+        "other",
+      ],
+    },
   },
 } as const
