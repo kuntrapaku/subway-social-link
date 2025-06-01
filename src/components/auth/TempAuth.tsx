@@ -18,29 +18,53 @@ const TempAuth = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    console.log('Login attempt:', { username, password: '***' })
+    
     if (!username.trim() || !password.trim()) {
+      console.log('Validation failed: empty fields')
       toast.error("Please enter both username and password")
       return
     }
     
     setLoading(true)
+    console.log('Starting login process...')
     
     // Simulate a brief loading delay
     setTimeout(() => {
-      // Store temporary user data in localStorage
-      const tempUser = {
-        id: `temp_${Date.now()}`,
-        username: username.trim(),
-        isTemporary: true
+      try {
+        // Store temporary user data in localStorage
+        const tempUser = {
+          id: `temp_${Date.now()}`,
+          username: username.trim(),
+          isTemporary: true
+        }
+        
+        console.log('Storing temp user:', tempUser)
+        localStorage.setItem('tempUser', JSON.stringify(tempUser))
+        
+        // Trigger a storage event to notify other components
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'tempUser',
+          newValue: JSON.stringify(tempUser)
+        }))
+        
+        console.log('Login successful, navigating to home')
+        toast.success(`Welcome ${username}!`)
+        setLoading(false)
+        
+        // Navigate to home page with replace to prevent back navigation to login
+        navigate('/', { replace: true })
+        
+        // Force a page reload to ensure state is properly updated
+        setTimeout(() => {
+          window.location.reload()
+        }, 100)
+        
+      } catch (error) {
+        console.error('Login error:', error)
+        toast.error('Login failed. Please try again.')
+        setLoading(false)
       }
-      
-      localStorage.setItem('tempUser', JSON.stringify(tempUser))
-      
-      toast.success(`Welcome ${username}!`)
-      setLoading(false)
-      
-      // Navigate to home page
-      navigate('/', { replace: true })
     }, 500)
   }
 
