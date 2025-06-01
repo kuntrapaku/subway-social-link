@@ -28,63 +28,42 @@ const VideoPlayer = ({
   const [loadingVideo, setLoadingVideo] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
-  const { user } = useAuth(); // Add auth context to track user state
+  const { user } = useAuth();
   
   // Use ref to track if component is mounted
   const isMounted = useRef(true);
   
   useEffect(() => {
-    // Set mount status
     isMounted.current = true;
-    console.log(`[Frame ${frameId}] VideoPlayer mounted, user: ${user ? 'logged in' : 'not logged in'}`);
+    console.log(`[Frame ${frameId}] VideoPlayer mounted with URL: ${videoUrl}`);
     
     return () => {
-      // Set unmount status
       isMounted.current = false;
-      
-      // Cleanup on unmount
       if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.src = "";
-        videoRef.current.load();
+        try {
+          videoRef.current.pause();
+          videoRef.current.removeAttribute('src');
+          videoRef.current.load();
+        } catch (e) {
+          // Ignore cleanup errors
+        }
       }
       console.log(`[Frame ${frameId}] VideoPlayer unmounted`);
     };
-  }, [frameId, user]);
+  }, [frameId, videoUrl]);
 
-  // Reset state when user auth changes
+  // Reset states when video URL changes
   useEffect(() => {
-    console.log(`[Frame ${frameId}] Auth state changed in VideoPlayer`);
-    
-    // Reset video states when auth changes
+    console.log(`[Frame ${frameId}] Video URL changed, resetting states`);
     setVideoLoaded(false);
     setLoadingVideo(true);
     setVideoError(false);
-    
-    // Force reload video element
-    if (videoRef.current) {
-      try {
-        videoRef.current.pause();
-        videoRef.current.src = videoUrl;
-        videoRef.current.load();
-      } catch (err) {
-        console.error(`[Frame ${frameId}] Error reloading video after auth change:`, err);
-      }
-    }
-  }, [user, frameId, videoUrl, setVideoError]);
+  }, [videoUrl, frameId, setVideoError]);
 
   // Main effect for loading and monitoring video
   useEffect(() => {
-    // Skip if no video or no ref
     if (!videoUrl || !videoRef.current) {
       console.log(`[Frame ${frameId}] No valid video URL or ref`);
-      setLoadingVideo(false);
-      return;
-    }
-    
-    // Stop if no user is logged in
-    if (!user) {
-      console.log(`[Frame ${frameId}] User not logged in, not loading video`);
       setLoadingVideo(false);
       return;
     }
@@ -98,21 +77,15 @@ const VideoPlayer = ({
     // Define event handlers
     const handleCanPlay = () => {
       if (!isMounted.current) return;
-      
-      console.log(`[Frame ${frameId}] Video can play: ${videoUrl}`);
+      console.log(`[Frame ${frameId}] Video can play`);
       setVideoLoaded(true);
       setLoadingVideo(false);
       setVideoError(false);
     };
     
-    const handleLoadedMetadata = () => {
-      if (!isMounted.current) return;
-      console.log(`[Frame ${frameId}] Metadata loaded: ${videoUrl}, duration: ${video.duration}s`);
-    };
-    
     const handleLoadedData = () => {
       if (!isMounted.current) return;
-      console.log(`[Frame ${frameId}] Video data loaded: ${videoUrl}`);
+      console.log(`[Frame ${frameId}] Video data loaded`);
       setVideoLoaded(true);
       setLoadingVideo(false);
     };
@@ -123,16 +96,14 @@ const VideoPlayer = ({
       const videoElement = e.target as HTMLVideoElement;
       console.error(`[Frame ${frameId}] Video error:`, videoElement.error);
       
-      setVideoError(true);
-      setLoadingVideo(false);
-      setIsPlaying(false);
-      
-      // More informative error message
-      toast({
-        title: "Video error",
-        description: `There was a problem loading this video. ${videoElement.error?.message || ''}`,
-        variant: "destructive"
-      });
+      // Don't immediately set error - give video more time to load
+      setTimeout(() => {
+        if (isMounted.current && !videoLoaded) {
+          setVideoError(true);
+          setLoadingVideo(false);
+          setIsPlaying(false);
+        }
+      }, 2000); // Wait 2 seconds before showing error
     };
     
     const handlePlay = () => {
@@ -158,19 +129,17 @@ const VideoPlayer = ({
     
     // Add all event listeners
     video.addEventListener('canplay', handleCanPlay);
-    video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('loadeddata', handleLoadedData);
     video.addEventListener('error', handleError);
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
     video.addEventListener('ended', handleEnded);
     
-    // Force reload of video with latest URL
+    // Set video source and load
     try {
-      // Explicitly set src attribute and force load
       video.src = videoUrl;
       video.load();
-      console.log(`[Frame ${frameId}] Video loading started: ${videoUrl}`);
+      console.log(`[Frame ${frameId}] Video loading started`);
     } catch (err) {
       console.error(`[Frame ${frameId}] Load error:`, err);
       setVideoError(true);
@@ -179,26 +148,17 @@ const VideoPlayer = ({
     
     // Cleanup function
     return () => {
-      // Remove all event listeners
       video.removeEventListener('canplay', handleCanPlay);
-      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
       video.removeEventListener('loadeddata', handleLoadedData);
       video.removeEventListener('error', handleError);
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
       video.removeEventListener('ended', handleEnded);
-      
-      // Clean up video element
-      try {
-        video.pause();
-      } catch (e) {
-        // Ignore errors on cleanup
-      }
     };
-  }, [videoUrl, frameId, toast, setVideoError, setIsPlaying, user]);
+  }, [videoUrl, frameId, setVideoError, setIsPlaying, videoLoaded]);
 
   const togglePlay = () => {
-    if (!videoRef.current || videoError) return;
+    if (!videoRef.current || videoError || !videoLoaded) return;
     
     if (isPlaying) {
       videoRef.current.pause();
@@ -206,7 +166,6 @@ const VideoPlayer = ({
       console.log(`[Frame ${frameId}] Manual play attempt`);
       videoRef.current.play().catch(error => {
         console.error(`[Frame ${frameId}] Play error:`, error);
-        setVideoError(true);
         toast({
           title: "Video playback error",
           description: "There was an issue playing this video.",
@@ -223,6 +182,20 @@ const VideoPlayer = ({
     }
   };
 
+  const handleRetry = () => {
+    console.log(`[Frame ${frameId}] Manual retry triggered`);
+    setVideoError(false);
+    setVideoLoaded(false);
+    setLoadingVideo(true);
+    
+    if (videoRef.current) {
+      videoRef.current.src = videoUrl;
+      videoRef.current.load();
+    }
+    
+    onRetry();
+  };
+
   if (videoError) {
     return (
       <div className="w-full bg-gray-100 rounded-lg p-6 text-center">
@@ -232,7 +205,7 @@ const VideoPlayer = ({
           variant="secondary"
           size="sm"
           className="mt-2 flex items-center gap-1 mx-auto"
-          onClick={onRetry}
+          onClick={handleRetry}
         >
           <RefreshCw className="h-4 w-4" /> Retry Video
         </Button>
@@ -253,17 +226,15 @@ const VideoPlayer = ({
     <div className="relative">
       <video 
         ref={videoRef}
-        src={videoUrl} 
         className="w-full h-auto rounded-lg object-cover"
         onClick={handleVideoClick}
-        controls
+        controls={videoLoaded}
         playsInline
-        loop
-        preload="auto"
-        poster={videoLoaded ? undefined : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"}
+        preload="metadata"
         style={{ 
           display: "block",
-          backgroundColor: "#f8f8f8"
+          backgroundColor: "#f8f8f8",
+          minHeight: "200px"
         }}
       />
       

@@ -35,40 +35,9 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
     };
   }, [videoPreviewUrl]);
 
-  // Complete reset when user auth changes
-  useEffect(() => {
-    console.log("Auth state changed in NewFrame, resetting video state");
-    setIsVideoReady(false);
-    
-    // Cleanup video element
-    if (videoRef.current) {
-      try {
-        videoRef.current.pause();
-        videoRef.current.removeAttribute('src');
-        videoRef.current.load();
-      } catch (e) {
-        console.error("Error cleaning up video element:", e);
-      }
-    }
-    
-    // Recreate the video URL if needed
-    if (videoPreviewUrl && video) {
-      try {
-        console.log("Recreating video URL after auth change");
-        URL.revokeObjectURL(videoPreviewUrl);
-        const newVideoUrl = URL.createObjectURL(video);
-        setVideoPreviewUrl(newVideoUrl);
-      } catch (error) {
-        console.error("Error recreating video URL after auth change:", error);
-        setVideo(null);
-        setVideoPreviewUrl(null);
-      }
-    }
-  }, [user, video, videoPreviewUrl]);
-
   // Enhanced video playability validation
   useEffect(() => {
-    if (!videoPreviewUrl || !videoRef.current || !user) {
+    if (!videoPreviewUrl || !videoRef.current) {
       return;
     }
     
@@ -90,7 +59,13 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
       });
     };
     
+    const handleLoadedData = () => {
+      console.log("Video data loaded:", videoPreviewUrl);
+      setIsVideoReady(true);
+    };
+    
     video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('loadeddata', handleLoadedData);
     video.addEventListener('error', handleError);
     
     // Force reload of video element with explicit src setting
@@ -99,9 +74,10 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
     
     return () => {
       video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('loadeddata', handleLoadedData);
       video.removeEventListener('error', handleError);
     };
-  }, [videoPreviewUrl, toast, user]);
+  }, [videoPreviewUrl, toast]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,14 +148,11 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
       description: "Your video frame has been shared with your network.",
     });
     
-    // Reset form
+    // Reset form - but don't revoke the URL immediately as it's being used by the frame
     setContent("");
     setVideo(null);
     setIsVideoReady(false);
-    if (videoPreviewUrl) {
-      URL.revokeObjectURL(videoPreviewUrl);
-      setVideoPreviewUrl(null);
-    }
+    setVideoPreviewUrl(null);
   };
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -227,9 +200,6 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
     }
   };
 
-  // Only show video preview if user is logged in
-  const shouldShowVideoPreview = videoPreviewUrl && user;
-
   return (
     <div className="bg-white rounded-lg shadow-md border border-orange-100 p-4 mb-4">
       <form onSubmit={handleSubmit}>
@@ -248,7 +218,7 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
           />
         </div>
         
-        {shouldShowVideoPreview && (
+        {videoPreviewUrl && (
           <div className="mt-3 relative">
             <video 
               ref={videoRef}

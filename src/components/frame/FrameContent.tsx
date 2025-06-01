@@ -17,23 +17,28 @@ const FrameContent = ({ content, imageUrl, id, isVideo }: FrameContentProps) => 
   const [isPlaying, setIsPlaying] = useState(false);
   const { user } = useAuth();
 
-  // Reset video error state when auth changes
+  // Reset video error state when content changes
   useEffect(() => {
-    console.log(`[Frame ${id}] Auth state updated, resetting video error state. User: ${user ? 'logged in' : 'not logged in'}`);
+    console.log(`[Frame ${id}] Content updated, resetting video error state`);
     setVideoError(false);
-  }, [user, id]);
+    setVideoAttempts(0);
+  }, [imageUrl, id]);
 
-  // Improved video URL validation with more robust checks
+  // Improved video URL validation with more permissive checks
   const validateVideoUrl = (url: string | undefined): boolean => {
     if (!url) return false;
     if (typeof url !== 'string') return false;
     if (url.trim() === '') return false;
-    // Additional checks for invalid placeholders or empty blob URLs
-    if (url.includes('undefined') || url.includes('null') || url.includes('[object Object]')) return false;
-    if (url.startsWith('blob:') && url.length < 20) return false;
     
-    console.log(`[Frame ${id}] URL validation passed for: ${url}`);
-    return true;
+    // More permissive validation - allow any valid URL format
+    try {
+      new URL(url);
+      console.log(`[Frame ${id}] URL validation passed for: ${url}`);
+      return true;
+    } catch {
+      console.log(`[Frame ${id}] URL validation failed for: ${url}`);
+      return false;
+    }
   };
 
   const retryVideo = () => {
@@ -42,12 +47,13 @@ const FrameContent = ({ content, imageUrl, id, isVideo }: FrameContentProps) => 
     setVideoAttempts(prev => prev + 1);
   };
 
-  // Get validated video URL
-  const videoUrl = validateVideoUrl(imageUrl) ? imageUrl : '';
+  // Determine if we should show video content
+  const hasValidVideoUrl = validateVideoUrl(imageUrl);
+  const shouldShowVideo = isVideo && hasValidVideoUrl;
   
-  // Show video when valid URL is available (regardless of auth for posts, only frames require auth)
-  const shouldShowVideo = isVideo && validateVideoUrl(imageUrl);
-  const shouldShowVideoPlayer = shouldShowVideo && (user || !id.startsWith('frame-'));
+  // For frames (id starts with 'frame-'), require auth. For posts, allow videos without auth
+  const requiresAuth = id.startsWith('frame-');
+  const shouldShowVideoPlayer = shouldShowVideo && (!requiresAuth || user);
 
   return (
     <div className="mt-3">
@@ -58,7 +64,15 @@ const FrameContent = ({ content, imageUrl, id, isVideo }: FrameContentProps) => 
           <img 
             src={imageUrl} 
             alt="Post content" 
-            className="w-full h-auto rounded-lg object-cover max-h-96" 
+            className="w-full h-auto rounded-lg object-cover max-h-96"
+            onError={(e) => {
+              console.log(`[Frame ${id}] Image failed to load: ${imageUrl}`);
+              // Hide broken images
+              e.currentTarget.style.display = 'none';
+            }}
+            onLoad={() => {
+              console.log(`[Frame ${id}] Image loaded successfully: ${imageUrl}`);
+            }}
           />
         </div>
       )}
@@ -68,12 +82,17 @@ const FrameContent = ({ content, imageUrl, id, isVideo }: FrameContentProps) => 
           <div className="w-full bg-gray-100 rounded-lg p-6 text-center">
             <AlertCircle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
             <p className="text-gray-700">
-              {!user && id.startsWith('frame-') ? "Sign in to view video frames" : "No valid video available"}
+              {!hasValidVideoUrl 
+                ? "No valid video available" 
+                : requiresAuth && !user 
+                ? "Sign in to view video frames" 
+                : "Video not available"
+              }
             </p>
           </div>
         ) : shouldShowVideoPlayer ? (
           <VideoPlayer 
-            videoUrl={videoUrl}
+            videoUrl={imageUrl!}
             frameId={id}
             onRetry={retryVideo}
             videoError={videoError}

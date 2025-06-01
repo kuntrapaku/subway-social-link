@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Image, Users, Calendar, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -61,7 +60,7 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
       return;
     }
     
-    // Prepare media URL
+    // Prepare media URL - Don't revoke it immediately, let the post component handle it
     let mediaUrl: string | undefined;
     if (video && videoPreviewUrl) {
       mediaUrl = videoPreviewUrl;
@@ -101,18 +100,14 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
       description: video ? "Your video has been shared with your network." : "Your artwork has been shared with your network.",
     });
     
-    // Reset form
+    // Reset form - but keep the URLs for the posts that were just created
     setContent("");
     setImage(null);
     setVideo(null);
-    if (imagePreviewUrl) {
-      URL.revokeObjectURL(imagePreviewUrl);
-      setImagePreviewUrl(null);
-    }
-    if (videoPreviewUrl) {
-      URL.revokeObjectURL(videoPreviewUrl);
-      setVideoPreviewUrl(null);
-    }
+    
+    // Create new URLs for the next upload instead of revoking current ones
+    setImagePreviewUrl(null);
+    setVideoPreviewUrl(null);
   };
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,19 +115,17 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
       const selectedVideo = e.target.files[0];
       console.log("Video selected in NewPost:", selectedVideo.name, "Size:", selectedVideo.size, "Type:", selectedVideo.type);
       
-      setVideo(selectedVideo);
-      setImage(null); // Clear image if a video is selected
-      
-      // Clean up any previous image URL
+      // Clear previous media
       if (imagePreviewUrl) {
         URL.revokeObjectURL(imagePreviewUrl);
         setImagePreviewUrl(null);
       }
-      
-      // Clean up any previous video URL
       if (videoPreviewUrl) {
         URL.revokeObjectURL(videoPreviewUrl);
       }
+      
+      setVideo(selectedVideo);
+      setImage(null);
       
       // Create video preview URL
       try {
@@ -160,19 +153,17 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
       const selectedImage = e.target.files[0];
       console.log("Image selected in NewPost:", selectedImage.name, "Size:", selectedImage.size, "Type:", selectedImage.type);
       
-      setImage(selectedImage);
-      setVideo(null); // Clear video if an image is selected
-      
-      // Clean up any previous video URL
+      // Clear previous media
       if (videoPreviewUrl) {
         URL.revokeObjectURL(videoPreviewUrl);
         setVideoPreviewUrl(null);
       }
-      
-      // Clean up any previous image URL
       if (imagePreviewUrl) {
         URL.revokeObjectURL(imagePreviewUrl);
       }
+      
+      setImage(selectedImage);
+      setVideo(null);
       
       // Create image preview URL
       try {
