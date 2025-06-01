@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from "react";
-import { Layout } from "@/components/layout/Layout";
 import { Post } from "@/components/NewPost";
 import LeftSidebar from "@/components/index/LeftSidebar";
 import PostsSection from "@/components/index/PostsSection";
@@ -130,30 +129,28 @@ const Index = () => {
   };
 
   return (
-    <Layout>
-      <div className="relative pb-10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-            <LeftSidebar 
-              activeCategory={activeCategory} 
-              setActiveCategory={setActiveCategory} 
+    <div className="relative pb-10">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+          <LeftSidebar 
+            activeCategory={activeCategory} 
+            setActiveCategory={setActiveCategory} 
+          />
+          
+          <div className="md:col-span-2 lg:col-span-1">
+            <PostsSection 
+              posts={posts} 
+              onNewPost={handleNewPost}
+              onNewFrame={handleNewFrame}
+              activeCategory={activeCategory}
+              setActiveCategory={setActiveCategory}
             />
-            
-            <div className="md:col-span-2 lg:col-span-1">
-              <PostsSection 
-                posts={posts} 
-                onNewPost={handleNewPost}
-                onNewFrame={handleNewFrame}
-                activeCategory={activeCategory}
-                setActiveCategory={setActiveCategory}
-              />
-            </div>
-            
-            <RightSidebar />
           </div>
+          
+          <RightSidebar />
         </div>
       </div>
-    </Layout>
+    </div>
   );
 };
 

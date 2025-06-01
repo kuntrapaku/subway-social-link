@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Layout } from '@/components/layout/Layout';
 import { ProfileBuilderForm } from '@/components/profile-builder/ProfileBuilderForm';
 import { ProfilePreview } from '@/components/profile-builder/ProfilePreview';
 import { PreviewModal } from '@/components/profile-builder/PreviewModal';
@@ -177,67 +176,63 @@ const ProfileBuilder = () => {
 
   if (isLoading) {
     return (
-      <Layout>
-        <div className="container max-w-7xl mx-auto py-10">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-          </div>
+      <div className="container max-w-7xl mx-auto py-10">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
         </div>
-      </Layout>
+      </div>
     );
   }
 
   return (
-    <Layout>
-      <div className="container max-w-7xl mx-auto py-10">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-orange-600 mb-2">Profile Builder</h1>
-          <p className="text-gray-600">Create your personalized MovCon profile page</p>
+    <div className="container max-w-7xl mx-auto py-10">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-orange-600 mb-2">Profile Builder</h1>
+        <p className="text-gray-600">Create your personalized MovCon profile page</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Form Section */}
+        <div className="space-y-6">
+          <ProfileBuilderForm 
+            profileData={profileData}
+            setProfileData={setProfileData}
+          />
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t">
+            <Button
+              variant="outline"
+              onClick={() => setShowPreview(true)}
+              className="flex items-center gap-2"
+            >
+              <Eye className="h-4 w-4" />
+              Preview
+            </Button>
+            
+            <Button
+              onClick={() => saveProfile(false)}
+              disabled={isSaving}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {isSaving ? 'Saving...' : 'Save Draft'}
+            </Button>
+            
+            <Button
+              onClick={() => saveProfile(true)}
+              disabled={isSaving}
+              className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700"
+            >
+              <Globe className="h-4 w-4" />
+              {isSaving ? 'Publishing...' : 'Publish'}
+            </Button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Form Section */}
-          <div className="space-y-6">
-            <ProfileBuilderForm 
-              profileData={profileData}
-              setProfileData={setProfileData}
-            />
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t">
-              <Button
-                variant="outline"
-                onClick={() => setShowPreview(true)}
-                className="flex items-center gap-2"
-              >
-                <Eye className="h-4 w-4" />
-                Preview
-              </Button>
-              
-              <Button
-                onClick={() => saveProfile(false)}
-                disabled={isSaving}
-                className="flex items-center gap-2"
-              >
-                <Save className="h-4 w-4" />
-                {isSaving ? 'Saving...' : 'Save Draft'}
-              </Button>
-              
-              <Button
-                onClick={() => saveProfile(true)}
-                disabled={isSaving}
-                className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700"
-              >
-                <Globe className="h-4 w-4" />
-                {isSaving ? 'Publishing...' : 'Publish'}
-              </Button>
-            </div>
-          </div>
-
-          {/* Live Preview Section */}
-          <div className="lg:sticky lg:top-8">
-            <ProfilePreview profileData={profileData} />
-          </div>
+        {/* Live Preview Section */}
+        <div className="lg:sticky lg:top-8">
+          <ProfilePreview profileData={profileData} />
         </div>
       </div>
 
@@ -246,7 +241,7 @@ const ProfileBuilder = () => {
         onClose={() => setShowPreview(false)}
         profileData={profileData}
       />
-    </Layout>
+    </div>
   );
 };
 

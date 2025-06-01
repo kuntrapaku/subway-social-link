@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { Layout } from "@/components/layout/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -219,116 +218,114 @@ const Network = () => {
   };
 
   return (
-    <Layout>
-      <div className="container mx-auto py-6 px-4">
-        <h1 className="text-2xl font-bold mb-6">Your Network</h1>
+    <div className="container mx-auto py-6 px-4">
+      <h1 className="text-2xl font-bold mb-6">Your Network</h1>
+      
+      <Tabs defaultValue="connections">
+        <TabsList className="mb-4">
+          <TabsTrigger value="connections" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-800">
+            <Users className="h-4 w-4 mr-2" />
+            Connections ({connections.length})
+          </TabsTrigger>
+          <TabsTrigger value="pending" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-800">
+            <Clock className="h-4 w-4 mr-2" />
+            Pending ({pendingRequests.length})
+          </TabsTrigger>
+          <TabsTrigger value="suggestions" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-800">
+            <User className="h-4 w-4 mr-2" />
+            Suggestions ({suggestedProfiles.length})
+          </TabsTrigger>
+        </TabsList>
         
-        <Tabs defaultValue="connections">
-          <TabsList className="mb-4">
-            <TabsTrigger value="connections" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-800">
-              <Users className="h-4 w-4 mr-2" />
-              Connections ({connections.length})
-            </TabsTrigger>
-            <TabsTrigger value="pending" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-800">
-              <Clock className="h-4 w-4 mr-2" />
-              Pending ({pendingRequests.length})
-            </TabsTrigger>
-            <TabsTrigger value="suggestions" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-800">
-              <User className="h-4 w-4 mr-2" />
-              Suggestions ({suggestedProfiles.length})
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="connections">
-            {loading ? (
-              renderLoadingSkeleton()
-            ) : connections.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {connections.map(renderConnection)}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Users className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-xl font-medium mb-2">No connections yet</h3>
-                <p className="text-gray-500 mb-6">Start building your professional network by connecting with other film industry professionals</p>
-                <Button 
-                  onClick={() => {
-                    const tabElement = document.querySelector('[data-value="suggestions"]');
-                    if (tabElement instanceof HTMLElement) {
-                      tabElement.click();
-                    }
-                  }}
-                  className="bg-orange-600 hover:bg-orange-700"
+        <TabsContent value="connections">
+          {loading ? (
+            renderLoadingSkeleton()
+          ) : connections.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {connections.map(renderConnection)}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Users className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-xl font-medium mb-2">No connections yet</h3>
+              <p className="text-gray-500 mb-6">Start building your professional network by connecting with other film industry professionals</p>
+              <Button 
+                onClick={() => {
+                  const tabElement = document.querySelector('[data-value="suggestions"]');
+                  if (tabElement instanceof HTMLElement) {
+                    tabElement.click();
+                  }
+                }}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                Explore Suggestions
+              </Button>
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="pending">
+          {loading ? (
+            renderLoadingSkeleton()
+          ) : pendingRequests.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pendingRequests.map(renderPendingRequest)}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Clock className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-xl font-medium mb-2">No pending requests</h3>
+              <p className="text-gray-500">When someone sends you a connection request, it will appear here</p>
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="suggestions">
+          {loading ? (
+            renderLoadingSkeleton()
+          ) : suggestedProfiles.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {suggestedProfiles.map(profile => (
+                <Card 
+                  key={profile.id} 
+                  className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => navigateToUserProfile(profile.user_id)}
                 >
-                  Explore Suggestions
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="pending">
-            {loading ? (
-              renderLoadingSkeleton()
-            ) : pendingRequests.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pendingRequests.map(renderPendingRequest)}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Clock className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-xl font-medium mb-2">No pending requests</h3>
-                <p className="text-gray-500">When someone sends you a connection request, it will appear here</p>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="suggestions">
-            {loading ? (
-              renderLoadingSkeleton()
-            ) : suggestedProfiles.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {suggestedProfiles.map(profile => (
-                  <Card 
-                    key={profile.id} 
-                    className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => navigateToUserProfile(profile.user_id)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
-                          <User className="h-6 w-6 text-orange-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium">{profile.name}</h4>
-                          <p className="text-sm text-gray-500">{profile.title}</p>
-                          <p className="text-xs text-gray-400 mt-1">{profile.location}</p>
-                        </div>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
+                        <User className="h-6 w-6 text-orange-600" />
                       </div>
-                      <div className="mt-3 flex justify-end">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="text-orange-600 border-orange-600 hover:bg-orange-50"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          Connect
-                        </Button>
+                      <div>
+                        <h4 className="font-medium">{profile.name}</h4>
+                        <p className="text-sm text-gray-500">{profile.title}</p>
+                        <p className="text-xs text-gray-400 mt-1">{profile.location}</p>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <User className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-xl font-medium mb-2">No suggestions available</h3>
-                <p className="text-gray-500">We'll let you know when we find people you may know</p>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
-    </Layout>
+                    </div>
+                    <div className="mt-3 flex justify-end">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-orange-600 border-orange-600 hover:bg-orange-50"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Connect
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <User className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-xl font-medium mb-2">No suggestions available</h3>
+              <p className="text-gray-500">We'll let you know when we find people you may know</p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 
