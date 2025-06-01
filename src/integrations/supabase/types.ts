@@ -103,6 +103,77 @@ export type Database = {
         }
         Relationships: []
       }
+      project_collaborators: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          role: Database["public"]["Enums"]["project_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          role: Database["public"]["Enums"]["project_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          role?: Database["public"]["Enums"]["project_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_collaborators_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          owner_id: string
+          tags: string[] | null
+          title: string
+          trailer_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          owner_id: string
+          tags?: string[] | null
+          title: string
+          trailer_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          owner_id?: string
+          tags?: string[] | null
+          title?: string
+          trailer_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       social_links: {
         Row: {
           created_at: string | null
@@ -208,6 +279,19 @@ export type Database = {
     Enums: {
       background_type: "solid" | "gradient" | "image"
       font_type: "inter" | "poppins" | "roboto" | "open-sans" | "playfair"
+      project_role:
+        | "director"
+        | "producer"
+        | "actor"
+        | "cinematographer"
+        | "editor"
+        | "writer"
+        | "composer"
+        | "sound_designer"
+        | "production_designer"
+        | "costume_designer"
+        | "makeup_artist"
+        | "other"
       social_platform:
         | "instagram"
         | "imdb"
@@ -336,6 +420,20 @@ export const Constants = {
     Enums: {
       background_type: ["solid", "gradient", "image"],
       font_type: ["inter", "poppins", "roboto", "open-sans", "playfair"],
+      project_role: [
+        "director",
+        "producer",
+        "actor",
+        "cinematographer",
+        "editor",
+        "writer",
+        "composer",
+        "sound_designer",
+        "production_designer",
+        "costume_designer",
+        "makeup_artist",
+        "other",
+      ],
       social_platform: [
         "instagram",
         "imdb",
