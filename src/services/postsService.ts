@@ -7,7 +7,7 @@ export interface DatabasePost {
   user_id: string;
   content: string;
   media_url: string | null;
-  media_type: 'image' | 'video' | null;
+  media_type: string | null; // Changed to allow any string from database
   likes: number;
   comments: number;
   created_at: string;
