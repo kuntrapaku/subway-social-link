@@ -1,9 +1,11 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { getUserDisplayName } from "@/utils/userHelpers";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
+import { createPost } from "@/services/postsService";
 import { Post } from "@/types/post";
 import MediaPreview from "@/components/post/MediaPreview";
 import MediaUploadButtons from "@/components/post/MediaUploadButtons";
@@ -24,15 +26,26 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
     video,
     imagePreviewUrl,
     videoPreviewUrl,
+    uploading,
     handleImageChange,
     handleVideoChange,
     resetMedia,
+    uploadCurrentMedia,
     setImagePreviewUrl,
     setVideoPreviewUrl,
   } = useMediaUpload();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to create posts.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     if (!content.trim() && !image && !video) {
       toast({
@@ -43,49 +56,71 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
       return;
     }
     
-    // Prepare media URL - Don't revoke it immediately, let the post component handle it
-    let mediaUrl: string | undefined;
-    if (video && videoPreviewUrl) {
-      mediaUrl = videoPreviewUrl;
-      console.log("Using video URL:", mediaUrl);
-    } else if (image && imagePreviewUrl) {
-      mediaUrl = imagePreviewUrl;
-      console.log("Using image URL:", mediaUrl);
+    try {
+      // Upload media if present
+      let mediaUrl: string | null = null;
+      let mediaType: 'image' | 'video' | null = null;
+      
+      if (image || video) {
+        mediaUrl = await uploadCurrentMedia();
+        if (!mediaUrl) {
+          return; // Upload failed, error already shown
+        }
+        mediaType = video ? 'video' : 'image';
+      }
+      
+      // Create post in database
+      const newPost = await createPost({
+        user_id: user.id,
+        content: content,
+        media_url: mediaUrl,
+        media_type: mediaType,
+        likes: 0,
+        comments: 0
+      });
+      
+      if (!newPost) {
+        toast({
+          title: "Failed to create post",
+          description: "There was an error creating your post. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Update the post with proper author info
+      const postWithAuthor: Post = {
+        ...newPost,
+        author: {
+          name: user ? getUserDisplayName(user) : "You",
+          title: "Artist"
+        }
+      };
+      
+      console.log("Created new post:", postWithAuthor);
+      
+      // Call the callback to add the post to the timeline
+      if (onPostCreated) {
+        onPostCreated(postWithAuthor);
+      }
+      
+      // Show success toast
+      toast({
+        title: video ? "Video shared!" : "Art shared!",
+        description: video ? "Your video has been shared with your network." : "Your artwork has been shared with your network.",
+      });
+      
+      // Reset form
+      setContent("");
+      resetMedia();
+    } catch (error) {
+      console.error("Error creating post:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create post. Please try again.",
+        variant: "destructive",
+      });
     }
-    
-    // Create a new post object
-    const newPost: Post = {
-      id: `post-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      author: {
-        name: user ? getUserDisplayName(user) : "You",
-        title: "Artist"
-      },
-      timeAgo: "Just now",
-      content: content,
-      imageUrl: mediaUrl,
-      likes: 0,
-      comments: 0,
-      isLiked: false,
-      isVideo: video !== null // Set isVideo flag based on whether a video was selected
-    };
-    
-    console.log("Created new post:", newPost);
-    console.log("Post media URL:", newPost.imageUrl);
-    
-    // Call the callback to add the post to the timeline
-    if (onPostCreated) {
-      onPostCreated(newPost);
-    }
-    
-    // Show success toast
-    toast({
-      title: video ? "Video shared!" : "Art shared!",
-      description: video ? "Your video has been shared with your network." : "Your artwork has been shared with your network.",
-    });
-    
-    // Reset form - but keep the URLs for the posts that were just created
-    setContent("");
-    resetMedia();
   };
 
   const handleRemoveImage = () => {
@@ -126,8 +161,16 @@ const NewPost = ({ onPostCreated, onNewVideo, onSwitchToFrames }: NewPostProps =
           <Button 
             type="submit"
             className="bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+            disabled={uploading}
           >
-            Share Art
+            {uploading ? (
+              <span className="flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                Uploading...
+              </span>
+            ) : (
+              'Share Art'
+            )}
           </Button>
         </div>
       </form>

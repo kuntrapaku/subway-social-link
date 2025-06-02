@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      frames: {
+        Row: {
+          comments: number | null
+          content: string
+          created_at: string | null
+          id: string
+          likes: number | null
+          updated_at: string | null
+          user_id: string | null
+          video_url: string | null
+        }
+        Insert: {
+          comments?: number | null
+          content: string
+          created_at?: string | null
+          id?: string
+          likes?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          comments?: number | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          likes?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       link_clicks: {
         Row: {
           created_at: string
@@ -78,6 +111,42 @@ export type Database = {
           type?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      posts: {
+        Row: {
+          comments: number | null
+          content: string
+          created_at: string | null
+          id: string
+          likes: number | null
+          media_type: string | null
+          media_url: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          comments?: number | null
+          content: string
+          created_at?: string | null
+          id?: string
+          likes?: number | null
+          media_type?: string | null
+          media_url?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          comments?: number | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          likes?: number | null
+          media_type?: string | null
+          media_url?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

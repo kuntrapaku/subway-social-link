@@ -1,9 +1,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Post } from "@/types/post";
 import { useAuth } from "@/context/AuthContext";
 import { getUserDisplayName } from "@/utils/userHelpers";
+import { uploadMediaFile } from "@/services/mediaUploadService";
+import { createFrame } from "@/services/postsService";
+import { Post } from "@/types/post";
 
 interface UseFrameCreationReturn {
   content: string;
@@ -14,6 +16,7 @@ interface UseFrameCreationReturn {
   setVideoPreviewUrl: (url: string | null) => void;
   isVideoReady: boolean;
   setIsVideoReady: (ready: boolean) => void;
+  uploading: boolean;
   videoRef: React.RefObject<HTMLVideoElement>;
   handleSubmit: (e: React.FormEvent, onFrameCreated?: (frame: Post) => void) => void;
   handleVideoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -25,6 +28,7 @@ export const useFrameCreation = (): UseFrameCreationReturn => {
   const [video, setVideo] = useState<File | null>(null);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
   const [isVideoReady, setIsVideoReady] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -88,8 +92,17 @@ export const useFrameCreation = (): UseFrameCreationReturn => {
     };
   }, [videoPreviewUrl, toast]);
 
-  const handleSubmit = (e: React.FormEvent, onFrameCreated?: (frame: Post) => void) => {
+  const handleSubmit = async (e: React.FormEvent, onFrameCreated?: (frame: Post) => void) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to create frames.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     if (!content.trim() && !video) {
       toast({
@@ -110,58 +123,79 @@ export const useFrameCreation = (): UseFrameCreationReturn => {
       return;
     }
     
-    createFrame(videoPreviewUrl, onFrameCreated);
-  };
-  
-  const createFrame = (videoUrl: string | null, onFrameCreated?: (frame: Post) => void) => {
-    console.log("Creating frame with video URL:", videoUrl);
-    
-    // Validate the video URL
-    if (!videoUrl && video) {
-      console.error("Failed to create video URL although video file exists");
+    try {
+      setUploading(true);
+      
+      // Upload video if present
+      let videoUrl: string | null = null;
+      if (video) {
+        const result = await uploadMediaFile(video);
+        if (result.error) {
+          toast({
+            title: "Upload failed",
+            description: result.error,
+            variant: "destructive",
+          });
+          return;
+        }
+        videoUrl = result.url;
+      }
+      
+      // Create frame in database
+      const newFrame = await createFrame({
+        user_id: user.id,
+        content: content,
+        video_url: videoUrl,
+        likes: 0,
+        comments: 0
+      });
+      
+      if (!newFrame) {
+        toast({
+          title: "Failed to create frame",
+          description: "There was an error creating your frame. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Update the frame with proper author info
+      const frameWithAuthor: Post = {
+        ...newFrame,
+        author: {
+          name: user ? getUserDisplayName(user) : "You",
+          title: "Filmmaker"
+        }
+      };
+      
+      console.log("Created new frame:", frameWithAuthor);
+      
+      // Call the callback to add the frame to the timeline
+      if (onFrameCreated) {
+        onFrameCreated(frameWithAuthor);
+      }
+      
+      // Show success toast
       toast({
-        title: "Error creating video",
-        description: "There was a problem processing your video.",
+        title: "Frame shared!",
+        description: "Your video frame has been shared with your network.",
+      });
+      
+      // Reset form
+      setContent("");
+      setVideo(null);
+      setIsVideoReady(false);
+      setVideoPreviewUrl(null);
+    } catch (error) {
+      console.error("Error creating frame:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create frame. Please try again.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setUploading(false);
     }
-    
-    // Create a new frame object with a more unique ID
-    const newFrame: Post = {
-      id: `frame-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      author: {
-        name: user ? getUserDisplayName(user) : "You",
-        title: "Filmmaker"
-      },
-      timeAgo: "Just now",
-      content: content,
-      imageUrl: videoUrl || undefined,
-      likes: 0,
-      comments: 0,
-      isLiked: false,
-      isVideo: true
-    };
-    
-    console.log("Created new frame:", newFrame);
-    console.log("Frame video URL:", newFrame.imageUrl);
-    
-    // Call the callback to add the frame to the timeline
-    if (onFrameCreated) {
-      onFrameCreated(newFrame);
-    }
-    
-    // Show success toast
-    toast({
-      title: "Frame shared!",
-      description: "Your video frame has been shared with your network.",
-    });
-    
-    // Reset form - but don't revoke the URL immediately as it's being used by the frame
-    setContent("");
-    setVideo(null);
-    setIsVideoReady(false);
-    setVideoPreviewUrl(null);
   };
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -218,6 +252,7 @@ export const useFrameCreation = (): UseFrameCreationReturn => {
     setVideoPreviewUrl,
     isVideoReady,
     setIsVideoReady,
+    uploading,
     videoRef,
     handleSubmit,
     handleVideoChange,

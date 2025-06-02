@@ -17,6 +17,7 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
     video,
     videoPreviewUrl,
     isVideoReady,
+    uploading,
     videoRef,
     handleSubmit,
     handleVideoChange,
@@ -45,9 +46,14 @@ const NewFrame = ({ onFrameCreated }: NewFrameProps = {}) => {
           <Button 
             type="submit"
             className="bg-orange-600 text-white hover:bg-orange-700 transition-colors"
-            disabled={video && !isVideoReady}
+            disabled={(video && !isVideoReady) || uploading}
           >
-            {video && !isVideoReady ? (
+            {uploading ? (
+              <span className="flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                Uploading...
+              </span>
+            ) : (video && !isVideoReady) ? (
               <span className="flex items-center gap-2">
                 <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
                 Processing...
