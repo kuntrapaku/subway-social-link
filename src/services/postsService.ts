@@ -61,6 +61,59 @@ const validateUserId = (userId: string): string => {
   return tempUuid;
 };
 
+// Sample users data for mapping
+const sampleUsers: DatabaseUser[] = [
+  {
+    id: "550e8400-e29b-41d4-a716-446655440001",
+    name: "Priya Sharma",
+    title: "Art Director at Dharma Productions",
+    profile_picture_url: "https://images.unsplash.com/photo-1494790108755-2616b332c1b4?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80",
+    email: "priya.sharma@bollywood.com"
+  },
+  {
+    id: "550e8400-e29b-41d4-a716-446655440002",
+    name: "Rajesh Kumar",
+    title: "Cinematographer at Bollywood Studios",
+    profile_picture_url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80",
+    email: "rajesh.kumar@cinematography.com"
+  },
+  {
+    id: "550e8400-e29b-41d4-a716-446655440003",
+    name: "Ananya Patel",
+    title: "Music Composer",
+    profile_picture_url: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80",
+    email: "ananya.patel@music.com"
+  },
+  {
+    id: "550e8400-e29b-41d4-a716-446655440004",
+    name: "Vikram Singh",
+    title: "Film Director at 24 Frames",
+    profile_picture_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80",
+    email: "vikram.singh@directing.com"
+  },
+  {
+    id: "550e8400-e29b-41d4-a716-446655440005",
+    name: "Kavya Reddy",
+    title: "Costume Designer",
+    profile_picture_url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80",
+    email: "kavya.reddy@costume.com"
+  },
+  {
+    id: "550e8400-e29b-41d4-a716-446655440006",
+    name: "Arjun Mehta",
+    title: "Film Editor",
+    profile_picture_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80",
+    email: "arjun.mehta@editing.com"
+  },
+  {
+    id: "550e8400-e29b-41d4-a716-446655440007",
+    name: "Neha Kapoor",
+    title: "Film Producer",
+    profile_picture_url: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80",
+    email: "neha.kapoor@production.com"
+  }
+];
+
 // Posts service
 export const createPost = async (post: Omit<DatabasePost, 'id' | 'created_at' | 'updated_at'>): Promise<Post | null> => {
   try {
@@ -83,7 +136,7 @@ export const createPost = async (post: Omit<DatabasePost, 'id' | 'created_at' | 
       return null;
     }
 
-    return convertDatabasePostToPost(data);
+    return convertDatabasePostToPostWithUser(data, sampleUsers);
   } catch (error) {
     console.error('Exception creating post:', error);
     return null;
@@ -103,18 +156,8 @@ export const getPosts = async (): Promise<Post[]> => {
       return getSamplePosts();
     }
 
-    // Get users for the posts
-    const { data: usersData, error: usersError } = await supabase
-      .from('users')
-      .select('*');
-
-    if (usersError) {
-      console.error('Error fetching users:', usersError);
-      return postsData.map(convertDatabasePostToPost);
-    }
-
-    // Combine posts with user information
-    return postsData.map(post => convertDatabasePostToPostWithUser(post, usersData));
+    // Combine posts with user information using sample users
+    return postsData.map(post => convertDatabasePostToPostWithUser(post, sampleUsers));
   } catch (error) {
     console.error('Exception fetching posts:', error);
     return getSamplePosts();
@@ -143,7 +186,7 @@ export const createFrame = async (frame: Omit<DatabaseFrame, 'id' | 'created_at'
       return null;
     }
 
-    return convertDatabaseFrameToPost(data);
+    return convertDatabaseFrameToPostWithUser(data, sampleUsers);
   } catch (error) {
     console.error('Exception creating frame:', error);
     return null;
@@ -163,18 +206,8 @@ export const getFrames = async (): Promise<Post[]> => {
       return getSampleFrames();
     }
 
-    // Get users for the frames
-    const { data: usersData, error: usersError } = await supabase
-      .from('users')
-      .select('*');
-
-    if (usersError) {
-      console.error('Error fetching users:', usersError);
-      return framesData.map(convertDatabaseFrameToPost);
-    }
-
-    // Combine frames with user information
-    return framesData.map(frame => convertDatabaseFrameToPostWithUser(frame, usersData));
+    // Combine frames with user information using sample users
+    return framesData.map(frame => convertDatabaseFrameToPostWithUser(frame, sampleUsers));
   } catch (error) {
     console.error('Exception fetching frames:', error);
     return getSampleFrames();
