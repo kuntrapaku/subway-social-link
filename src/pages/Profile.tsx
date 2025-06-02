@@ -1,4 +1,4 @@
-import Navbar from "@/components/Navbar";
+
 import ProfileCard from "@/components/ProfileCard";
 import PostCard from "@/components/PostCard";
 import PlayableFrameCard from "@/components/PlayableFrameCard";
@@ -67,7 +67,6 @@ const Profile = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
