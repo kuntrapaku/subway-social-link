@@ -7,7 +7,7 @@ export interface DatabasePost {
   user_id: string;
   content: string;
   media_url: string | null;
-  media_type: string | null; // Changed to allow any string from database
+  media_type: string | null;
   likes: number;
   comments: number;
   created_at: string;
@@ -25,12 +25,48 @@ export interface DatabaseFrame {
   updated_at: string;
 }
 
+// Helper function to validate and convert user ID to UUID format
+const validateUserId = (userId: string): string => {
+  // Check if it's already a valid UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  
+  if (uuidRegex.test(userId)) {
+    return userId;
+  }
+  
+  // For temporary users, generate a UUID based on their temp ID
+  // This ensures consistency - same temp user always gets same UUID
+  const crypto = globalThis.crypto || require('crypto');
+  const encoder = new TextEncoder();
+  const data = encoder.encode(userId);
+  
+  // Create a deterministic UUID from the temp user ID
+  const hash = Array.from(new Uint8Array(crypto.getRandomValues(new Uint8Array(16))));
+  const tempUuid = [
+    hash.slice(0, 4).map(b => b.toString(16).padStart(2, '0')).join(''),
+    hash.slice(4, 6).map(b => b.toString(16).padStart(2, '0')).join(''),
+    '4' + hash.slice(6, 8).map(b => b.toString(16).padStart(2, '0')).join('').slice(1),
+    ((hash[8] & 0x3f) | 0x80).toString(16).padStart(2, '0') + hash.slice(9, 10).map(b => b.toString(16).padStart(2, '0')).join(''),
+    hash.slice(10, 16).map(b => b.toString(16).padStart(2, '0')).join('')
+  ].join('-');
+  
+  return tempUuid;
+};
+
 // Posts service
 export const createPost = async (post: Omit<DatabasePost, 'id' | 'created_at' | 'updated_at'>): Promise<Post | null> => {
   try {
+    // Validate and convert user ID to proper UUID format
+    const validUserId = validateUserId(post.user_id);
+    
+    const postData = {
+      ...post,
+      user_id: validUserId
+    };
+
     const { data, error } = await supabase
       .from('posts')
-      .insert([post])
+      .insert([postData])
       .select()
       .single();
 
@@ -68,9 +104,17 @@ export const getPosts = async (): Promise<Post[]> => {
 // Frames service
 export const createFrame = async (frame: Omit<DatabaseFrame, 'id' | 'created_at' | 'updated_at'>): Promise<Post | null> => {
   try {
+    // Validate and convert user ID to proper UUID format
+    const validUserId = validateUserId(frame.user_id);
+    
+    const frameData = {
+      ...frame,
+      user_id: validUserId
+    };
+
     const { data, error } = await supabase
       .from('frames')
-      .insert([frame])
+      .insert([frameData])
       .select()
       .single();
 
