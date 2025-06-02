@@ -1,10 +1,11 @@
 
-import { User, MoreHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Post } from "@/components/NewPost";
+import { User } from "lucide-react";
 
 interface FrameHeaderProps {
-  author: Post['author'];
+  author: {
+    name: string;
+    title: string;
+  };
   timeAgo: string;
 }
 
@@ -16,14 +17,11 @@ const FrameHeader = ({ author, timeAgo }: FrameHeaderProps) => {
           <User className="h-6 w-6 text-orange-600" />
         </div>
         <div>
-          <h3 className="font-medium">{author.name}</h3>
+          <h3 className="font-medium text-gray-900">{author.name}</h3>
           <p className="text-xs text-gray-500">{author.title}</p>
           <p className="text-xs text-gray-400">{timeAgo}</p>
         </div>
       </div>
-      <Button variant="ghost" size="icon" className="h-8 w-8">
-        <MoreHorizontal className="h-5 w-5 text-gray-500" />
-      </Button>
     </div>
   );
 };
