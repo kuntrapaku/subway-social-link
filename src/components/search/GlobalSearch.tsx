@@ -3,13 +3,10 @@ import { useState, useEffect, useRef } from "react";
 import { Search, User, FolderOpen, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
-import { toast } from "sonner";
 
 interface SearchResult {
   type: 'user' | 'project';
@@ -28,7 +25,6 @@ export const GlobalSearch = () => {
   const [showResults, setShowResults] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   // Close results when clicking outside
   useEffect(() => {
@@ -55,11 +51,11 @@ export const GlobalSearch = () => {
       setShowResults(true);
 
       try {
-        // Search profiles
+        // Search profile_builder table for users
         const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, name, title, user_id')
-          .or(`name.ilike.%${query}%, title.ilike.%${query}%`)
+          .from('profile_builder')
+          .select('id, display_name, bio, user_id, profile_picture_url')
+          .or(`display_name.ilike.%${query}%, bio.ilike.%${query}%`)
           .limit(5);
 
         // Search projects
@@ -78,13 +74,16 @@ export const GlobalSearch = () => {
         // Add user results
         if (profiles) {
           profiles.forEach(profile => {
-            searchResults.push({
-              type: 'user',
-              id: profile.id,
-              title: profile.name,
-              subtitle: profile.title,
-              userId: profile.user_id
-            });
+            if (profile.display_name) {
+              searchResults.push({
+                type: 'user',
+                id: profile.id,
+                title: profile.display_name,
+                subtitle: profile.bio || undefined,
+                avatar: profile.profile_picture_url || undefined,
+                userId: profile.user_id
+              });
+            }
           });
         }
 
@@ -103,7 +102,7 @@ export const GlobalSearch = () => {
         setResults(searchResults);
       } catch (error) {
         console.error('Search error:', error);
-        toast.error('Failed to search');
+        setResults([]);
       } finally {
         setIsLoading(false);
       }
@@ -121,43 +120,6 @@ export const GlobalSearch = () => {
       navigate(`/user/${result.userId}`);
     } else {
       navigate(`/projects/${result.id}`);
-    }
-  };
-
-  const sendConnectionRequest = async (userId: string, userName: string) => {
-    if (!user) {
-      toast.error('Please log in to send connection requests');
-      return;
-    }
-
-    try {
-      // Check if connection already exists
-      const { data: existingConnection } = await supabase
-        .from('connection_requests')
-        .select('*')
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`)
-        .single();
-
-      if (existingConnection) {
-        toast.error('Connection request already exists');
-        return;
-      }
-
-      // Send connection request
-      const { error } = await supabase
-        .from('connection_requests')
-        .insert({
-          sender_id: user.id,
-          receiver_id: userId,
-          status: 'pending'
-        });
-
-      if (error) throw error;
-
-      toast.success(`Connection request sent to ${userName}`);
-    } catch (error) {
-      console.error('Connection request error:', error);
-      toast.error('Failed to send connection request');
     }
   };
 
@@ -189,12 +151,10 @@ export const GlobalSearch = () => {
             {results.map((result) => (
               <div
                 key={`${result.type}-${result.id}`}
-                className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 flex items-center justify-between group"
+                className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 flex items-center justify-between"
+                onClick={() => handleResultClick(result)}
               >
-                <div 
-                  className="flex items-center space-x-3 flex-1"
-                  onClick={() => handleResultClick(result)}
-                >
+                <div className="flex items-center space-x-3 flex-1">
                   <div className="flex-shrink-0">
                     {result.type === 'user' ? (
                       <Avatar className="h-8 w-8">
@@ -235,20 +195,6 @@ export const GlobalSearch = () => {
                     )}
                   </div>
                 </div>
-
-                {result.type === 'user' && user && result.userId !== user.id && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-orange-600 border-orange-600 hover:bg-orange-50 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      sendConnectionRequest(result.userId!, result.title);
-                    }}
-                  >
-                    Connect
-                  </Button>
-                )}
               </div>
             ))}
           </CardContent>
