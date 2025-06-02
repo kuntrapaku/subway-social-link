@@ -177,14 +177,14 @@ export const createDemoData = async () => {
       }
     }
 
-    // Create social links
+    // Create social links with correct platform types
     const socialLinksData = [
-      { profile_id: 'demo-ava-torres', platform: 'instagram', label: '@ava.torres.films', url: 'instagram.com/ava.torres.films', display_order: 0 },
-      { profile_id: 'demo-ava-torres', platform: 'website', label: 'Portfolio & Reel', url: 'avatorresfilms.com', display_order: 1 },
-      { profile_id: 'demo-liam-chen', platform: 'youtube', label: 'Liam Chen Cinematography', url: 'youtube.com/@liamchencinema', display_order: 0 },
-      { profile_id: 'demo-liam-chen', platform: 'website', label: 'Cinematography Reel', url: 'liamchen.camera', display_order: 1 },
-      { profile_id: 'demo-jordan-ray', platform: 'imdb', label: 'Jordan Ray - Actor', url: 'imdb.com/name/nm1234567', display_order: 0 },
-      { profile_id: 'demo-jordan-ray', platform: 'website', label: 'Acting Portfolio', url: 'jordanrayactor.com', display_order: 1 }
+      { profile_id: 'demo-ava-torres', platform: 'instagram' as const, label: '@ava.torres.films', url: 'instagram.com/ava.torres.films', display_order: 0 },
+      { profile_id: 'demo-ava-torres', platform: 'website' as const, label: 'Portfolio & Reel', url: 'avatorresfilms.com', display_order: 1 },
+      { profile_id: 'demo-liam-chen', platform: 'youtube' as const, label: 'Liam Chen Cinematography', url: 'youtube.com/@liamchencinema', display_order: 0 },
+      { profile_id: 'demo-liam-chen', platform: 'website' as const, label: 'Cinematography Reel', url: 'liamchen.camera', display_order: 1 },
+      { profile_id: 'demo-jordan-ray', platform: 'imdb' as const, label: 'Jordan Ray - Actor', url: 'imdb.com/name/nm1234567', display_order: 0 },
+      { profile_id: 'demo-jordan-ray', platform: 'website' as const, label: 'Acting Portfolio', url: 'jordanrayactor.com', display_order: 1 }
     ];
 
     for (const link of socialLinksData) {

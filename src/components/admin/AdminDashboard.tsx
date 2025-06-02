@@ -3,11 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, FileText, Video, BarChart3, AlertTriangle, UserCheck } from 'lucide-react';
 import { DemoDataButton } from './DemoDataButton';
-import { useReportsAnalytics } from '@/hooks/useReportsAnalytics';
 
 export const AdminDashboard = () => {
-  const { data: analyticsData } = useReportsAnalytics();
-
   const metrics = [
     {
       title: 'Total Users',
