@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 interface UploadResult {
   url: string | null;
@@ -14,6 +13,10 @@ export const uploadMediaFile = async (file: File): Promise<UploadResult> => {
     const filePath = `${fileName}`;
 
     console.log('Uploading file:', fileName, 'Size:', file.size, 'Type:', file.type);
+
+    // Check if user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('Upload session check:', session ? 'Authenticated' : 'Not authenticated');
 
     const { data, error } = await supabase.storage
       .from('media-uploads')
