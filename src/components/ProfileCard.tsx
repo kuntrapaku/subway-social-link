@@ -7,6 +7,8 @@ import { getProfile, saveProfile, updateProfile, Profile as ProfileType } from "
 import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toCompatibleUser, getUserDisplayName } from "@/utils/userHelpers";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProfileCardProps {
   isCurrentUser?: boolean;
@@ -15,44 +17,44 @@ interface ProfileCardProps {
 
 const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Load profile when component mounts or when user changes
-    const fetchProfile = async () => {
-      setLoading(true);
-      try {
-        // Convert AuthUser to compatible User for profile operations
-        const compatibleUser = user ? toCompatibleUser(user) : null;
-        
-        if (compatibleUser) {
-          // If userId is provided and it's not the current user, we would fetch that user's profile
-          // For now, we're only handling the current user's profile
-          const profileData = await getProfile(compatibleUser);
-          setProfile(profileData);
-        } else if (user) {
-          // For temp users, create a basic profile display
-          setProfile({
-            id: user.id,
-            name: getUserDisplayName(user),
-            title: "Film Professional",
-            location: "Mumbai, India",
-            connections: 0,
-            company: "",
-            joinDate: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-            website: "",
-            bio: "Welcome to MovConnect!",
-            user_id: user.id
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-      } finally {
-        setLoading(false);
+  const fetchProfile = async () => {
+    setLoading(true);
+    try {
+      // Convert AuthUser to compatible User for profile operations
+      const compatibleUser = user ? toCompatibleUser(user) : null;
+      
+      if (compatibleUser) {
+        // If userId is provided and it's not the current user, we would fetch that user's profile
+        // For now, we're only handling the current user's profile
+        const profileData = await getProfile(compatibleUser);
+        setProfile(profileData);
+      } else if (user) {
+        // For temp users, create a basic profile display
+        setProfile({
+          id: user.id,
+          name: getUserDisplayName(user),
+          title: "Film Professional",
+          location: "Mumbai, India",
+          connections: 0,
+          company: "",
+          joinDate: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          website: "",
+          bio: "Welcome to MovConnect!",
+          user_id: user.id
+        });
       }
-    };
-    
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProfile();
     
     // Add event listener to refresh profile when it's updated
@@ -72,13 +74,51 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
     if (!user || !profile) return;
     
     try {
+      // Update profile in Supabase if user is authenticated via Supabase
+      if ('email' in user) {
+        const { error } = await supabase
+          .from('profile_builder')
+          .upsert({
+            user_id: user.id,
+            display_name: updatedProfile.name,
+            bio: updatedProfile.bio,
+            updated_at: new Date().toISOString()
+          });
+
+        if (error) {
+          console.error('Error updating profile in Supabase:', error);
+          throw error;
+        }
+      }
+
+      // Update local profile state
+      const newProfile = {
+        ...profile,
+        ...updatedProfile
+      };
+      setProfile(newProfile);
+
+      // Also update using the existing profile utility
       const compatibleUser = toCompatibleUser(user);
       if (compatibleUser) {
-        const newProfile = await updateProfile(compatibleUser, updatedProfile);
-        setProfile(newProfile);
+        await updateProfile(compatibleUser, updatedProfile);
       }
+
+      toast({
+        title: "Profile updated successfully",
+        description: "Your profile changes have been saved.",
+      });
+
+      // Trigger profile update event for other components
+      window.dispatchEvent(new Event("profile-updated"));
+      
     } catch (error) {
       console.error("Error updating profile:", error);
+      toast({
+        title: "Error updating profile",
+        description: "There was an error saving your changes. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

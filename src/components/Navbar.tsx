@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, MessageCircle, Users, Home, User, Film, Briefcase, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const Navbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
 
@@ -27,6 +28,7 @@ const Navbar = () => {
         title: "Signed out successfully",
         description: "You have been logged out of your account.",
       });
+      navigate('/login');
     } catch (error) {
       console.error("Sign out error:", error);
       toast({

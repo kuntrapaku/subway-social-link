@@ -12,17 +12,46 @@ interface PlayableFrameCardProps {
 
 const PlayableFrameCard = ({ frame }: PlayableFrameCardProps) => {
   const frameIdRef = useRef(frame.id);
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   
   // Enhanced logging for authentication state and video URL
   useEffect(() => {
     console.log(`[Frame ${frame.id}] PlayableFrameCard - Auth state:`, user ? "Logged in" : "Not logged in");
+    console.log(`[Frame ${frame.id}] PlayableFrameCard - Loading:`, isLoading);
     console.log(`[Frame ${frame.id}] PlayableFrameCard - Video URL:`, frame.imageUrl);
     
     // Update ref when frame ID changes
     frameIdRef.current = frame.id;
-  }, [user, frame.id, frame.imageUrl]);
+  }, [user, isLoading, frame.id, frame.imageUrl]);
 
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg shadow-md border border-orange-100 p-4 mb-4">
+        <div className="flex items-center justify-center h-48">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show sign in message if not authenticated
+  if (!user) {
+    return (
+      <div className="bg-white rounded-lg shadow-md border border-orange-100 p-4 mb-4">
+        <div className="flex items-center justify-center h-48 bg-gray-50 rounded-lg">
+          <div className="text-center">
+            <p className="text-gray-600 mb-2">Sign in to view videos</p>
+            <a href="/login" className="text-orange-600 hover:underline">
+              Go to login
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show video content when authenticated
   return (
     <div className="bg-white rounded-lg shadow-md border border-orange-100 p-4 mb-4 animate-fade-in">
       <FrameHeader 
