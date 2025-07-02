@@ -33,34 +33,6 @@ export interface DatabaseUser {
   email: string;
 }
 
-// Helper function to validate and convert user ID to UUID format
-const validateUserId = (userId: string): string => {
-  // Check if it's already a valid UUID format
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  
-  if (uuidRegex.test(userId)) {
-    return userId;
-  }
-  
-  // For temporary users, generate a UUID based on their temp ID
-  // This ensures consistency - same temp user always gets same UUID
-  const crypto = globalThis.crypto || require('crypto');
-  const encoder = new TextEncoder();
-  const data = encoder.encode(userId);
-  
-  // Create a deterministic UUID from the temp user ID
-  const hash = Array.from(new Uint8Array(crypto.getRandomValues(new Uint8Array(16))));
-  const tempUuid = [
-    hash.slice(0, 4).map(b => b.toString(16).padStart(2, '0')).join(''),
-    hash.slice(4, 6).map(b => b.toString(16).padStart(2, '0')).join(''),
-    '4' + hash.slice(6, 8).map(b => b.toString(16).padStart(2, '0')).join('').slice(1),
-    ((hash[8] & 0x3f) | 0x80).toString(16).padStart(2, '0') + hash.slice(9, 10).map(b => b.toString(16).padStart(2, '0')).join(''),
-    hash.slice(10, 16).map(b => b.toString(16).padStart(2, '0')).join('')
-  ].join('-');
-  
-  return tempUuid;
-};
-
 // Sample users data for mapping
 const sampleUsers: DatabaseUser[] = [
   {
@@ -111,53 +83,90 @@ const sampleUsers: DatabaseUser[] = [
     title: "Film Producer",
     profile_picture_url: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80",
     email: "neha.kapoor@production.com"
+  },
+  {
+    id: "temp-user-1",
+    name: "Demo User",
+    title: "Film Professional",
+    profile_picture_url: null,
+    email: "demo@movcon.com"
   }
 ];
 
 // Posts service
 export const createPost = async (post: Omit<DatabasePost, 'id' | 'created_at' | 'updated_at'>): Promise<Post | null> => {
   try {
-    // Validate and convert user ID to proper UUID format
-    const validUserId = validateUserId(post.user_id);
+    console.log('Creating post with data:', post);
     
-    const postData = {
-      ...post,
-      user_id: validUserId
-    };
+    // For temp users, save to localStorage instead of Supabase
+    if (post.user_id.startsWith('temp-')) {
+      const tempPost: Post = {
+        id: `temp-post-${Date.now()}`,
+        author: {
+          name: sampleUsers.find(u => u.id === post.user_id)?.name || "Demo User",
+          title: sampleUsers.find(u => u.id === post.user_id)?.title || "Film Professional"
+        },
+        timeAgo: "Just now",
+        content: post.content,
+        imageUrl: post.media_url || undefined,
+        likes: 0,
+        comments: 0,
+        isLiked: false,
+        isVideo: post.media_type === 'video'
+      };
+      
+      // Save to localStorage
+      const existingPosts = JSON.parse(localStorage.getItem('movcon-posts') || '[]');
+      existingPosts.unshift(tempPost);
+      localStorage.setItem('movcon-posts', JSON.stringify(existingPosts));
+      
+      return tempPost;
+    }
 
     const { data, error } = await supabase
       .from('posts')
-      .insert([postData])
+      .insert([post])
       .select()
       .single();
 
     if (error) {
       console.error('Error creating post:', error);
-      return null;
+      throw error;
     }
 
     return convertDatabasePostToPostWithUser(data, sampleUsers);
   } catch (error) {
     console.error('Exception creating post:', error);
-    return null;
+    throw error;
   }
 };
 
 export const getPosts = async (): Promise<Post[]> => {
   try {
-    // Try to get posts from database first
+    // Get posts from localStorage for temp users
+    const localPosts = JSON.parse(localStorage.getItem('movcon-posts') || '[]');
+    
+    // Try to get posts from database
     const { data: postsData, error: postsError } = await supabase
       .from('posts')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (postsError) {
-      console.error('Error fetching posts:', postsError);
-      return getSamplePosts();
+    let allPosts: Post[] = [];
+
+    if (!postsError && postsData) {
+      allPosts = postsData.map(post => convertDatabasePostToPostWithUser(post, sampleUsers));
     }
 
-    // Combine posts with user information using sample users
-    return postsData.map(post => convertDatabasePostToPostWithUser(post, sampleUsers));
+    // Combine with local posts and sample data
+    allPosts = [...localPosts, ...allPosts, ...getSamplePosts()];
+    
+    // Remove duplicates based on ID
+    const uniquePosts = allPosts.filter((post, index, self) => 
+      index === self.findIndex(p => p.id === post.id)
+    );
+
+    return uniquePosts;
   } catch (error) {
     console.error('Exception fetching posts:', error);
     return getSamplePosts();
@@ -167,47 +176,77 @@ export const getPosts = async (): Promise<Post[]> => {
 // Frames service
 export const createFrame = async (frame: Omit<DatabaseFrame, 'id' | 'created_at' | 'updated_at'>): Promise<Post | null> => {
   try {
-    // Validate and convert user ID to proper UUID format
-    const validUserId = validateUserId(frame.user_id);
+    console.log('Creating frame with data:', frame);
     
-    const frameData = {
-      ...frame,
-      user_id: validUserId
-    };
+    // For temp users, save to localStorage instead of Supabase
+    if (frame.user_id.startsWith('temp-')) {
+      const tempFrame: Post = {
+        id: `temp-frame-${Date.now()}`,
+        author: {
+          name: sampleUsers.find(u => u.id === frame.user_id)?.name || "Demo User",
+          title: sampleUsers.find(u => u.id === frame.user_id)?.title || "Film Professional"
+        },
+        timeAgo: "Just now",
+        content: frame.content,
+        imageUrl: frame.video_url || undefined,
+        likes: 0,
+        comments: 0,
+        isLiked: false,
+        isVideo: true
+      };
+      
+      // Save to localStorage
+      const existingFrames = JSON.parse(localStorage.getItem('movcon-frames') || '[]');
+      existingFrames.unshift(tempFrame);
+      localStorage.setItem('movcon-frames', JSON.stringify(existingFrames));
+      
+      return tempFrame;
+    }
 
     const { data, error } = await supabase
       .from('frames')
-      .insert([frameData])
+      .insert([frame])
       .select()
       .single();
 
     if (error) {
       console.error('Error creating frame:', error);
-      return null;
+      throw error;
     }
 
     return convertDatabaseFrameToPostWithUser(data, sampleUsers);
   } catch (error) {
     console.error('Exception creating frame:', error);
-    return null;
+    throw error;
   }
 };
 
 export const getFrames = async (): Promise<Post[]> => {
   try {
-    // Try to get frames from database first
+    // Get frames from localStorage for temp users
+    const localFrames = JSON.parse(localStorage.getItem('movcon-frames') || '[]');
+    
+    // Try to get frames from database
     const { data: framesData, error: framesError } = await supabase
       .from('frames')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (framesError) {
-      console.error('Error fetching frames:', framesError);
-      return getSampleFrames();
+    let allFrames: Post[] = [];
+
+    if (!framesError && framesData) {
+      allFrames = framesData.map(frame => convertDatabaseFrameToPostWithUser(frame, sampleUsers));
     }
 
-    // Combine frames with user information using sample users
-    return framesData.map(frame => convertDatabaseFrameToPostWithUser(frame, sampleUsers));
+    // Combine with local frames and sample data
+    allFrames = [...localFrames, ...allFrames, ...getSampleFrames()];
+    
+    // Remove duplicates based on ID
+    const uniqueFrames = allFrames.filter((frame, index, self) => 
+      index === self.findIndex(f => f.id === frame.id)
+    );
+
+    return uniqueFrames;
   } catch (error) {
     console.error('Exception fetching frames:', error);
     return getSampleFrames();

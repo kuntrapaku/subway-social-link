@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Post } from "@/components/NewPost";
 import LeftSidebar from "@/components/index/LeftSidebar";
@@ -16,17 +17,22 @@ const Feed = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
+        console.log('Loading feed data...');
+        
         // Load from Supabase first
         const [supabasePosts, supabaseFrames] = await Promise.all([
           getPostsFromSupabase(),
           getFramesFromSupabase()
         ]);
         
+        console.log('Supabase posts:', supabasePosts.length);
+        console.log('Supabase frames:', supabaseFrames.length);
+        
         // Load from localStorage for fallback/sample data
         const localPosts = getPosts();
         const localFrames = getFrames();
         
-        // Combine Supabase data with local data, prioritizing Supabase
+        // Combine Supabase data with local data, prioritizing fresh data
         const allPosts = supabasePosts.length > 0 ? supabasePosts : localPosts.length > 0 ? localPosts : getSamplePosts();
         const allFrames = supabaseFrames.length > 0 ? supabaseFrames : localFrames.length > 0 ? localFrames : getSampleFrames();
         
@@ -53,18 +59,37 @@ const Feed = () => {
     };
     
     loadData();
+
+    // Listen for profile updates to refresh posts
+    const handleProfileUpdate = () => {
+      loadData();
+    };
+
+    window.addEventListener("profile-updated", handleProfileUpdate);
+    
+    return () => {
+      window.removeEventListener("profile-updated", handleProfileUpdate);
+    };
   }, []);
 
   const handleNewPost = (newPost: Post) => {
+    console.log('Adding new post:', newPost);
     // Add post to state immediately for UI responsiveness
     const updatedPosts = [newPost, ...posts];
     setPosts(updatedPosts);
+    
+    // Also save to localStorage
+    savePosts(updatedPosts);
   };
   
   const handleNewFrame = (newFrame: Post) => {
+    console.log('Adding new frame:', newFrame);
     // Add frame to state immediately for UI responsiveness
     const updatedFrames = [newFrame, ...frames];
     setFrames(updatedFrames);
+    
+    // Also save to localStorage
+    saveFrames(updatedFrames);
   };
 
   const getSamplePosts = (): Post[] => [

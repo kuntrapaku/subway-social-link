@@ -39,10 +39,10 @@ export const GlobalSearchNavbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Mock search function
+  // Enhanced search function with more comprehensive results
   useEffect(() => {
     const searchData = () => {
-      if (!query.trim() || query.length < 2) {
+      if (!query.trim() || query.length < 1) {
         setResults([]);
         setShowResults(false);
         return;
@@ -55,62 +55,68 @@ export const GlobalSearchNavbar = () => {
       // Simulate API delay
       setTimeout(() => {
         const mockResults: SearchResult[] = [];
+        const queryLower = query.toLowerCase();
 
-        // Mock user results
-        if (query.toLowerCase().includes('rajesh') || query.toLowerCase().includes('director')) {
-          mockResults.push({
-            type: 'user',
-            id: 'user-1',
-            title: 'Rajesh Kumar',
-            subtitle: 'Film Director & Cinematographer',
-            userId: 'rajesh-kumar'
-          });
-        }
-        if (query.toLowerCase().includes('priya') || query.toLowerCase().includes('art')) {
-          mockResults.push({
-            type: 'user',
-            id: 'user-2',
-            title: 'Priya Sharma',
-            subtitle: 'Art Director',
-            userId: 'priya-sharma'
-          });
-        }
-        if (query.toLowerCase().includes('surendra')) {
-          mockResults.push({
-            type: 'user',
-            id: 'user-3',
-            title: 'Surendra Kuntrapaku',
-            subtitle: 'Film Professional',
-            userId: 'surendra-kuntrapaku'
-          });
-        }
+        // Comprehensive user database for search
+        const users = [
+          { name: 'Sarayu Kuntrapaku', role: 'Film Director', location: 'Mumbai', id: 'sarayu-kuntrapaku' },
+          { name: 'Surendra Kuntrapaku', role: 'Producer & Director', location: 'Hyderabad', id: 'surendra-kuntrapaku' },
+          { name: 'Rajesh Kumar', role: 'Cinematographer', location: 'Mumbai', id: 'rajesh-kumar' },
+          { name: 'Priya Sharma', role: 'Art Director', location: 'Delhi', id: 'priya-sharma' },
+          { name: 'Vikram Singh', role: 'Film Director', location: 'Chennai', id: 'vikram-singh' },
+          { name: 'Ananya Patel', role: 'Music Composer', location: 'Mumbai', id: 'ananya-patel' },
+          { name: 'Kavya Reddy', role: 'Costume Designer', location: 'Bangalore', id: 'kavya-reddy' },
+          { name: 'Arjun Mehta', role: 'Film Editor', location: 'Pune', id: 'arjun-mehta' },
+          { name: 'Neha Kapoor', role: 'Film Producer', location: 'Mumbai', id: 'neha-kapoor' },
+          { name: 'Divya Singh', role: 'Actress & Model', location: 'Mumbai', id: 'divya-singh' },
+          { name: 'Rohit Sharma', role: 'Sound Designer', location: 'Delhi', id: 'rohit-sharma' },
+          { name: 'Meera Nair', role: 'Script Writer', location: 'Kochi', id: 'meera-nair' }
+        ];
 
-        // Mock project results
-        if (query.toLowerCase().includes('mumbai') || query.toLowerCase().includes('project')) {
-          mockResults.push({
-            type: 'project',
-            id: 'project-1',
-            title: 'Mumbai Stories',
-            subtitle: 'Independent Drama Film',
-            tags: ['Drama', 'Independent']
-          });
-        }
-        if (query.toLowerCase().includes('neon') || query.toLowerCase().includes('thriller')) {
-          mockResults.push({
-            type: 'project',
-            id: 'project-2',
-            title: 'Neon Nights',
-            subtitle: 'Neo-noir Thriller',
-            tags: ['Thriller', 'Neo-noir']
-          });
-        }
+        // Search users by name, role, or location
+        users.forEach(user => {
+          if (user.name.toLowerCase().includes(queryLower) || 
+              user.role.toLowerCase().includes(queryLower) ||
+              user.location.toLowerCase().includes(queryLower)) {
+            mockResults.push({
+              type: 'user',
+              id: user.id,
+              title: user.name,
+              subtitle: `${user.role} • ${user.location}`,
+              userId: user.id
+            });
+          }
+        });
 
-        setResults(mockResults.slice(0, 5));
+        // Project results
+        const projects = [
+          { name: 'Mumbai Stories', type: 'Independent Drama', tags: ['Drama', 'Independent'] },
+          { name: 'Neon Nights', type: 'Neo-noir Thriller', tags: ['Thriller', 'Neo-noir'] },
+          { name: 'Bollywood Dreams', type: 'Musical Romance', tags: ['Musical', 'Romance'] },
+          { name: 'Silent Echoes', type: 'Psychological Horror', tags: ['Horror', 'Psychological'] },
+          { name: 'Urban Chronicles', type: 'Documentary', tags: ['Documentary', 'Urban'] }
+        ];
+
+        projects.forEach((project, index) => {
+          if (project.name.toLowerCase().includes(queryLower) || 
+              project.type.toLowerCase().includes(queryLower) ||
+              project.tags.some(tag => tag.toLowerCase().includes(queryLower))) {
+            mockResults.push({
+              type: 'project',
+              id: `project-${index + 1}`,
+              title: project.name,
+              subtitle: project.type,
+              tags: project.tags
+            });
+          }
+        });
+
+        setResults(mockResults.slice(0, 8));
         setIsLoading(false);
-      }, 300);
+      }, 200);
     };
 
-    const timeoutId = setTimeout(searchData, 200);
+    const timeoutId = setTimeout(searchData, 100);
     return () => clearTimeout(timeoutId);
   }, [query]);
 
@@ -158,12 +164,12 @@ export const GlobalSearchNavbar = () => {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
         <Input
-          placeholder="Search people, projects..."
+          placeholder="Search creators, projects..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           className="pl-10 pr-4 bg-white border-gray-200 focus:border-orange-500 focus:ring-orange-200"
-          onFocus={() => query.length >= 2 && setShowResults(true)}
+          onFocus={() => query.length >= 1 && setShowResults(true)}
         />
         {isLoading && (
           <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 animate-spin" />
@@ -175,7 +181,7 @@ export const GlobalSearchNavbar = () => {
           <CardContent className="p-0">
             {results.length === 0 && !isLoading && (
               <div className="p-4 text-center text-gray-500">
-                No results found
+                No results found for "{query}"
               </div>
             )}
             

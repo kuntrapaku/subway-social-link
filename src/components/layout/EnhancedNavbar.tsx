@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, MessageCircle, Users, Home, User, Film, Briefcase, LogOut, Settings, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ const EnhancedNavbar = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [displayName, setDisplayName] = useState('User');
 
   const navItems = [
     { path: '/feed', icon: Home, label: 'Home' },
@@ -25,9 +26,47 @@ const EnhancedNavbar = () => {
     { path: '/industry', icon: Briefcase, label: 'Industry' },
   ];
 
+  // Update display name when profile changes
+  useEffect(() => {
+    const updateDisplayName = () => {
+      // Check localStorage for updated profile
+      const localProfile = localStorage.getItem('user-profile');
+      if (localProfile) {
+        const profile = JSON.parse(localProfile);
+        setDisplayName(profile.name || 'User');
+        return;
+      }
+
+      // Fallback to user data
+      if (user && 'username' in user) {
+        setDisplayName(user.username);
+      } else if (user && 'email' in user) {
+        setDisplayName(user.email.split('@')[0]);
+      } else {
+        setDisplayName('User');
+      }
+    };
+
+    updateDisplayName();
+
+    // Listen for profile updates
+    const handleProfileUpdate = () => {
+      updateDisplayName();
+    };
+
+    window.addEventListener("profile-updated", handleProfileUpdate);
+    
+    return () => {
+      window.removeEventListener("profile-updated", handleProfileUpdate);
+    };
+  }, [user]);
+
   const handleSignOut = async () => {
     try {
       await signOut();
+      // Clear localStorage
+      localStorage.removeItem('user-profile');
+      localStorage.removeItem('temp-user');
       toast({
         title: "Signed out successfully",
         description: "You have been logged out of your account.",
@@ -48,8 +87,6 @@ const EnhancedNavbar = () => {
     return null;
   }
 
-  // Get display name for user
-  const displayName = user && 'username' in user ? user.username : 'User';
   const userInitials = displayName.split(' ').map(n => n[0]).join('').toUpperCase();
 
   return (

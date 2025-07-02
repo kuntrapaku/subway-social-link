@@ -24,17 +24,24 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
   const fetchProfile = async () => {
     setLoading(true);
     try {
+      // Check localStorage for updated profile first
+      const localProfile = localStorage.getItem('user-profile');
+      if (localProfile) {
+        const parsedProfile = JSON.parse(localProfile);
+        setProfile(parsedProfile);
+        setLoading(false);
+        return;
+      }
+
       // Convert AuthUser to compatible User for profile operations
       const compatibleUser = user ? toCompatibleUser(user) : null;
       
       if (compatibleUser) {
-        // If userId is provided and it's not the current user, we would fetch that user's profile
-        // For now, we're only handling the current user's profile
         const profileData = await getProfile(compatibleUser);
         setProfile(profileData);
       } else if (user) {
         // For temp users, create a basic profile display
-        setProfile({
+        const basicProfile = {
           id: user.id,
           name: getUserDisplayName(user),
           title: "Film Professional",
@@ -45,7 +52,10 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
           website: "",
           bio: "Welcome to MovConnect!",
           user_id: user.id
-        });
+        };
+        setProfile(basicProfile);
+        // Cache in localStorage
+        localStorage.setItem('user-profile', JSON.stringify(basicProfile));
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -98,10 +108,22 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
       };
       setProfile(newProfile);
 
+      // Update localStorage cache
+      localStorage.setItem('user-profile', JSON.stringify(newProfile));
+
       // Also update using the existing profile utility
       const compatibleUser = toCompatibleUser(user);
       if (compatibleUser) {
         await updateProfile(compatibleUser, updatedProfile);
+      }
+
+      // Update temp user data if it's a temp user
+      if (user.id.startsWith('temp-')) {
+        const tempUserData = {
+          ...user,
+          username: updatedProfile.name
+        };
+        localStorage.setItem('temp-user', JSON.stringify(tempUserData));
       }
 
       toast({
@@ -136,7 +158,7 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
         <div className="h-32 bg-gradient-to-r from-orange-400 to-red-600 rounded-t-lg"></div>
         <div className="absolute -bottom-12 left-4">
           <div className="h-24 w-24 rounded-full bg-white p-1">
-            <div className="h-full w-full rounded-full bg-orange-100 flex items-center justify-center">
+            <div className="h-full w-full rounded-full bg-gradient-to-r from-orange-100 to-red-100 flex items-center justify-center">
               <User className="h-12 w-12 text-orange-600" />
             </div>
           </div>
@@ -190,7 +212,7 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
         <div className="mt-4 space-y-2">
           <div className="flex items-center text-sm">
             <Briefcase className="h-4 w-4 mr-2 text-gray-500" />
-            <span>{profile.company}</span>
+            <span>{profile.company || "MovCon Studios"}</span>
           </div>
           <div className="flex items-center text-sm">
             <Calendar className="h-4 w-4 mr-2 text-gray-500" />
@@ -198,7 +220,7 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
           </div>
           <div className="flex items-center text-sm">
             <Link className="h-4 w-4 mr-2 text-gray-500" />
-            <a href={`https://${profile.website}`} className="text-orange-600 hover:underline">
+            <a href={profile.website ? `https://${profile.website}` : "#"} className="text-orange-600 hover:underline">
               {profile.website || "Not specified"}
             </a>
           </div>
