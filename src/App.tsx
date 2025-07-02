@@ -46,53 +46,27 @@ function AppRoutes() {
       <Route path="/" element={user ? <Feed /> : <LandingPage />} />
       
       {/* Protected routes with Layout wrapper */}
-      <Route path="/feed" element={<Layout />}>
-        <Route index element={<Feed />} />
-      </Route>
-      <Route path="/profile" element={<Layout />}>
-        <Route index element={<Profile />} />
-      </Route>
-      <Route path="/user/:userId" element={<Layout />}>
-        <Route index element={<UserProfile />} />
-      </Route>
-      <Route path="/messages" element={<Layout />}>
-        <Route index element={<Messages />} />
-      </Route>
-      <Route path="/network" element={<Layout />}>
-        <Route index element={<Network />} />
-      </Route>
-      <Route path="/projects" element={<Layout />}>
-        <Route index element={<Projects />} />
-      </Route>
-      <Route path="/projects/:id" element={<Layout />}>
-        <Route index element={<ProjectDetail />} />
-      </Route>
-      <Route path="/notifications" element={<Layout />}>
-        <Route index element={<Notifications />} />
-      </Route>
-      <Route path="/film-industry" element={<Layout />}>
-        <Route index element={<FilmIndustry />} />
-      </Route>
-      <Route path="/profile-builder" element={<Layout />}>
-        <Route index element={<ProfileBuilder />} />
-      </Route>
-      <Route path="/help-support" element={<Layout />}>
-        <Route index element={<HelpSupport />} />
-      </Route>
-      <Route path="/reports-analytics" element={<Layout />}>
-        <Route index element={<ReportsAnalytics />} />
-      </Route>
-      
-      {/* Admin routes with Layout wrapper */}
-      <Route path="/admin" element={<Layout />}>
-        <Route index element={
+      <Route element={<Layout />}>
+        <Route path="/feed" element={<Feed />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/user/:userId" element={<UserProfile />} />
+        <Route path="/messages" element={<Messages />} />
+        <Route path="/network" element={<Network />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/projects/:id" element={<ProjectDetail />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/film-industry" element={<FilmIndustry />} />
+        <Route path="/profile-builder" element={<ProfileBuilder />} />
+        <Route path="/help-support" element={<HelpSupport />} />
+        <Route path="/reports-analytics" element={<ReportsAnalytics />} />
+        
+        {/* Admin routes */}
+        <Route path="/admin" element={
           <AdminRoute>
             <AdminDashboard />
           </AdminRoute>
         } />
-      </Route>
-      <Route path="/user-management" element={<Layout />}>
-        <Route index element={
+        <Route path="/user-management" element={
           <AdminRoute>
             <UserManagement />
           </AdminRoute>
