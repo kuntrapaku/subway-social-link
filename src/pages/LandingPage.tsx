@@ -1,13 +1,41 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Film, Users, MessageSquare, Camera, Play, Star, Search, Menu, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Film, Users, MessageSquare, Camera, Play, Star, Search, Menu, X, Bell, User, Settings, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { GlobalSearchNavbar } from '@/components/search/GlobalSearchNavbar';
 
 const LandingPage = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  // Navigation items for authenticated users
+  const navItems = [
+    { path: '/feed', label: 'Home', icon: Film },
+    { path: '/projects', label: 'Projects', icon: Camera },
+    { path: '/network', label: 'Network', icon: Users },
+    { path: '/messages', label: 'Messages', icon: MessageSquare, badge: 3 },
+    { path: '/industry', label: 'Industry', icon: Play },
+  ];
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
+  };
+
+  // Get display name for user
+  const displayName = user && 'username' in user ? user.username : 'User';
+  const userInitials = displayName.split(' ').map(n => n[0]).join('').toUpperCase();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50">
@@ -17,101 +45,200 @@ const LandingPage = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center">
-              <Link to="/" className="flex-shrink-0 flex items-center">
+              <Link to={user ? "/feed" : "/"} className="flex-shrink-0 flex items-center">
                 <span className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                   MovCon
                 </span>
               </Link>
             </div>
 
-            {/* Desktop Navigation */}
+            {/* Desktop Navigation - Show different nav for authenticated vs non-authenticated */}
             <div className="hidden md:flex items-center space-x-8">
-              <Link to="/" className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                Home
-              </Link>
-              <Link to="#features" className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                Features
-              </Link>
-              <Link to="#how-it-works" className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                How it Works
-              </Link>
-              <Link to="#creators" className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                For Creators
-              </Link>
+              {user ? (
+                // Authenticated user navigation
+                <>
+                  {navItems.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-700 hover:text-orange-600 hover:bg-orange-50 relative"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                      {item.badge && (
+                        <Badge className="ml-1 bg-red-500 text-white text-xs">
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </Link>
+                  ))}
+                </>
+              ) : (
+                // Non-authenticated user navigation
+                <>
+                  <Link to="/" className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    Home
+                  </Link>
+                  <Link to="#features" className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    Features
+                  </Link>
+                  <Link to="#how-it-works" className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    How it Works
+                  </Link>
+                  <Link to="#creators" className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    For Creators
+                  </Link>
+                </>
+              )}
             </div>
 
-            {/* Search Bar (Desktop) */}
-            <div className="hidden lg:flex items-center flex-1 max-w-md mx-8">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <input
-                  type="text"
-                  placeholder="Search creators, projects..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white/50"
-                />
+            {/* Search Bar (Desktop) - Show for authenticated users */}
+            {user && (
+              <div className="hidden lg:flex items-center flex-1 max-w-md mx-8">
+                <GlobalSearchNavbar />
               </div>
-            </div>
+            )}
 
-            {/* Right side buttons */}
-            <div className="hidden md:flex items-center space-x-4">
-              <Button asChild variant="ghost" className="text-gray-700 hover:text-orange-600">
-                <Link to="/login">Sign In</Link>
-              </Button>
-              <Button asChild className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white">
-                <Link to="/login">Join Network</Link>
+            {/* Right side - Auth-dependent content */}
+            <div className="flex items-center space-x-4">
+              {user ? (
+                // Authenticated user controls
+                <>
+                  {/* Notifications */}
+                  <Button asChild variant="ghost" size="sm" className="relative">
+                    <Link to="/notifications">
+                      <Bell className="h-5 w-5" />
+                      <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                        2
+                      </Badge>
+                    </Link>
+                  </Button>
+
+                  {/* User Menu */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src="" alt={displayName} />
+                          <AvatarFallback className="bg-gradient-to-r from-orange-400 to-red-400 text-white">
+                            {userInitials}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                      <div className="flex items-center justify-start gap-2 p-2">
+                        <div className="flex flex-col space-y-1 leading-none">
+                          <p className="font-medium">{displayName}</p>
+                          <p className="w-[200px] truncate text-sm text-muted-foreground">
+                            Film Professional
+                          </p>
+                        </div>
+                      </div>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/profile" className="flex items-center">
+                          <User className="mr-2 h-4 w-4" />
+                          <span>Profile</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/settings" className="flex items-center">
+                          <Settings className="mr-2 h-4 w-4" />
+                          <span>Settings</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleSignOut}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Sign out</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              ) : (
+                // Non-authenticated user controls
+                <>
+                  <Button asChild variant="ghost" className="text-gray-700 hover:text-orange-600">
+                    <Link to="/login">Sign In</Link>
+                  </Button>
+                  <Button asChild className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white">
+                    <Link to="/login">Join Network</Link>
+                  </Button>
+                </>
+              )}
+
+              {/* Mobile menu button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="md:hidden"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
             </div>
-
-            {/* Mobile menu button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="md:hidden"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
           </div>
 
           {/* Mobile Navigation */}
           {mobileMenuOpen && (
             <div className="md:hidden border-t border-gray-200 py-4">
               <div className="space-y-2">
-                {/* Mobile Search */}
-                <div className="px-3 py-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <input
-                      type="text"
-                      placeholder="Search creators, projects..."
-                      className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    />
+                {/* Mobile Search - Show for authenticated users */}
+                {user && (
+                  <div className="px-3 py-2">
+                    <GlobalSearchNavbar />
                   </div>
-                </div>
+                )}
                 
                 {/* Mobile Navigation Links */}
-                <Link to="/" className="block px-3 py-2 text-gray-700 hover:text-orange-600 hover:bg-orange-50 rounded-md">
-                  Home
-                </Link>
-                <Link to="#features" className="block px-3 py-2 text-gray-700 hover:text-orange-600 hover:bg-orange-50 rounded-md">
-                  Features
-                </Link>
-                <Link to="#how-it-works" className="block px-3 py-2 text-gray-700 hover:text-orange-600 hover:bg-orange-50 rounded-md">
-                  How it Works
-                </Link>
-                <Link to="#creators" className="block px-3 py-2 text-gray-700 hover:text-orange-600 hover:bg-orange-50 rounded-md">
-                  For Creators
-                </Link>
+                {user ? (
+                  // Authenticated mobile nav
+                  navItems.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.label}</span>
+                      {item.badge && (
+                        <Badge className="ml-auto bg-red-500 text-white text-xs">
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </Link>
+                  ))
+                ) : (
+                  // Non-authenticated mobile nav
+                  <>
+                    <Link to="/" className="block px-3 py-2 text-gray-700 hover:text-orange-600 hover:bg-orange-50 rounded-md">
+                      Home
+                    </Link>
+                    <Link to="#features" className="block px-3 py-2 text-gray-700 hover:text-orange-600 hover:bg-orange-50 rounded-md">
+                      Features
+                    </Link>
+                    <Link to="#how-it-works" className="block px-3 py-2 text-gray-700 hover:text-orange-600 hover:bg-orange-50 rounded-md">
+                      How it Works
+                    </Link>
+                    <Link to="#creators" className="block px-3 py-2 text-gray-700 hover:text-orange-600 hover:bg-orange-50 rounded-md">
+                      For Creators
+                    </Link>
+                  </>
+                )}
                 
-                {/* Mobile Auth Buttons */}
-                <div className="px-3 py-2 space-y-2">
-                  <Button asChild variant="outline" className="w-full">
-                    <Link to="/login">Sign In</Link>
-                  </Button>
-                  <Button asChild className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700">
-                    <Link to="/login">Join Network</Link>
-                  </Button>
-                </div>
+                {/* Mobile Auth Buttons - Show for non-authenticated users */}
+                {!user && (
+                  <div className="px-3 py-2 space-y-2">
+                    <Button asChild variant="outline" className="w-full">
+                      <Link to="/login">Sign In</Link>
+                    </Button>
+                    <Button asChild className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700">
+                      <Link to="/login">Join Network</Link>
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
