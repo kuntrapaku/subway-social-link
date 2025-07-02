@@ -1,5 +1,5 @@
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 interface UseVideoPlayerProps {
@@ -8,15 +8,21 @@ interface UseVideoPlayerProps {
   onRetry: () => void;
   setVideoError: (error: boolean) => void;
   setIsPlaying: (isPlaying: boolean) => void;
+  autoplay?: boolean;
 }
 
 interface UseVideoPlayerReturn {
   videoLoaded: boolean;
   loadingVideo: boolean;
+  isMuted: boolean;
+  showControls: boolean;
   videoRef: React.RefObject<HTMLVideoElement>;
   togglePlay: () => void;
+  toggleMute: () => void;
   handleVideoClick: (e: React.MouseEvent) => void;
   handleRetry: () => void;
+  handleMouseEnter: () => void;
+  handleMouseLeave: () => void;
 }
 
 export const useVideoPlayer = ({
@@ -24,13 +30,17 @@ export const useVideoPlayer = ({
   frameId,
   onRetry,
   setVideoError,
-  setIsPlaying
+  setIsPlaying,
+  autoplay = false
 }: UseVideoPlayerProps): UseVideoPlayerReturn => {
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [loadingVideo, setLoadingVideo] = useState(true);
+  const [isMuted, setIsMuted] = useState(true); // Start muted for autoplay
+  const [showControls, setShowControls] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const isMounted = useRef(true);
+  const intersectionObserver = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
     isMounted.current = true;
@@ -47,6 +57,11 @@ export const useVideoPlayer = ({
           // Ignore cleanup errors
         }
       }
+      
+      if (intersectionObserver.current) {
+        intersectionObserver.current.disconnect();
+      }
+      
       console.log(`[Frame ${frameId}] VideoPlayer unmounted`);
     };
   }, [frameId, videoUrl]);
@@ -58,6 +73,38 @@ export const useVideoPlayer = ({
     setLoadingVideo(true);
     setVideoError(false);
   }, [videoUrl, frameId, setVideoError]);
+
+  // Setup intersection observer for autoplay
+  useEffect(() => {
+    if (!autoplay || !videoRef.current) return;
+
+    intersectionObserver.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!isMounted.current || !videoRef.current) return;
+          
+          if (entry.isIntersecting && videoLoaded) {
+            // Auto play when in viewport
+            videoRef.current.play().catch(() => {
+              // Ignore autoplay errors
+            });
+          } else {
+            // Pause when out of viewport
+            videoRef.current.pause();
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    intersectionObserver.current.observe(videoRef.current);
+
+    return () => {
+      if (intersectionObserver.current) {
+        intersectionObserver.current.disconnect();
+      }
+    };
+  }, [autoplay, videoLoaded]);
 
   // Main effect for loading and monitoring video
   useEffect(() => {
@@ -80,6 +127,11 @@ export const useVideoPlayer = ({
       setVideoLoaded(true);
       setLoadingVideo(false);
       setVideoError(false);
+      
+      // Set muted state for autoplay
+      if (video) {
+        video.muted = isMuted;
+      }
     };
     
     const handleLoadedData = () => {
@@ -102,7 +154,7 @@ export const useVideoPlayer = ({
           setLoadingVideo(false);
           setIsPlaying(false);
         }
-      }, 2000); // Wait 2 seconds before showing error
+      }, 2000);
     };
     
     const handlePlay = () => {
@@ -137,6 +189,7 @@ export const useVideoPlayer = ({
     // Set video source and load
     try {
       video.src = videoUrl;
+      video.muted = isMuted;
       video.load();
       console.log(`[Frame ${frameId}] Video loading started`);
     } catch (err) {
@@ -154,9 +207,9 @@ export const useVideoPlayer = ({
       video.removeEventListener('pause', handlePause);
       video.removeEventListener('ended', handleEnded);
     };
-  }, [videoUrl, frameId, setVideoError, setIsPlaying, videoLoaded]);
+  }, [videoUrl, frameId, setVideoError, setIsPlaying, videoLoaded, isMuted]);
 
-  const togglePlay = () => {
+  const togglePlay = useCallback(() => {
     if (!videoRef.current || !videoLoaded) return;
     
     if (videoRef.current.paused) {
@@ -172,16 +225,26 @@ export const useVideoPlayer = ({
     } else {
       videoRef.current.pause();
     }
-  };
+  }, [videoLoaded, frameId, toast]);
+
+  const toggleMute = useCallback(() => {
+    if (!videoRef.current) return;
+    
+    const newMutedState = !isMuted;
+    setIsMuted(newMutedState);
+    videoRef.current.muted = newMutedState;
+    
+    console.log(`[Frame ${frameId}] Video ${newMutedState ? 'muted' : 'unmuted'}`);
+  }, [isMuted, frameId]);
   
-  const handleVideoClick = (e: React.MouseEvent) => {
+  const handleVideoClick = useCallback((e: React.MouseEvent) => {
     if (videoLoaded) {
       e.preventDefault();
       togglePlay();
     }
-  };
+  }, [videoLoaded, togglePlay]);
 
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     console.log(`[Frame ${frameId}] Manual retry triggered`);
     setVideoError(false);
     setVideoLoaded(false);
@@ -193,14 +256,27 @@ export const useVideoPlayer = ({
     }
     
     onRetry();
-  };
+  }, [frameId, videoUrl, onRetry, setVideoError]);
+
+  const handleMouseEnter = useCallback(() => {
+    setShowControls(true);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setShowControls(false);
+  }, []);
 
   return {
     videoLoaded,
     loadingVideo,
+    isMuted,
+    showControls,
     videoRef,
     togglePlay,
+    toggleMute,
     handleVideoClick,
-    handleRetry
+    handleRetry,
+    handleMouseEnter,
+    handleMouseLeave
   };
 };
