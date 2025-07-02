@@ -9,9 +9,10 @@ interface FrameContentProps {
   imageUrl?: string;
   id: string;
   isVideo?: boolean;
+  autoplay?: boolean;
 }
 
-const FrameContent = ({ content, imageUrl, id, isVideo }: FrameContentProps) => {
+const FrameContent = ({ content, imageUrl, id, isVideo, autoplay = false }: FrameContentProps) => {
   const [videoError, setVideoError] = useState(false);
   const [videoAttempts, setVideoAttempts] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -99,6 +100,7 @@ const FrameContent = ({ content, imageUrl, id, isVideo }: FrameContentProps) => 
             setVideoError={setVideoError}
             isPlaying={isPlaying}
             setIsPlaying={setIsPlaying}
+            autoplay={autoplay}
           />
         ) : null}
       </div>
