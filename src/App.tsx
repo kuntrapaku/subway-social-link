@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { TempAuthProvider } from "./context/TempAuthContext";
 import { NotificationsProvider } from "./context/NotificationsContext";
-import Layout from "./components/layout/Layout";
+import { Layout } from "./components/layout/Layout";
 import Feed from "./pages/Feed";
 import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
