@@ -20,6 +20,8 @@ import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Notifications from "./pages/Notifications";
 import FilmIndustry from "./pages/FilmIndustry";
+import Industry from "./pages/Industry";
+import Settings from "./pages/Settings";
 import ProfileBuilder from "./pages/ProfileBuilder";
 import HelpSupport from "./pages/HelpSupport";
 import ReportsAnalytics from "./pages/ReportsAnalytics";
@@ -49,13 +51,16 @@ function AppRoutes() {
       <Route element={<Layout />}>
         <Route path="/feed" element={<Feed />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/:username" element={<UserProfile />} />
         <Route path="/user/:userId" element={<UserProfile />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/network" element={<Network />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/notifications" element={<Notifications />} />
+        <Route path="/industry" element={<Industry />} />
         <Route path="/film-industry" element={<FilmIndustry />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="/profile-builder" element={<ProfileBuilder />} />
         <Route path="/help-support" element={<HelpSupport />} />
         <Route path="/reports-analytics" element={<ReportsAnalytics />} />

@@ -1,7 +1,7 @@
 
 import React, { useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import Navbar from "@/components/Navbar";
+import EnhancedNavbar from "@/components/layout/EnhancedNavbar";
 import { useAuth } from "@/context/AuthContext";
 
 export const Layout: React.FC = () => {
@@ -26,7 +26,7 @@ export const Layout: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
       </div>
     );
   }
@@ -38,7 +38,7 @@ export const Layout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <EnhancedNavbar />
       <main className="w-full pt-0">
         <Outlet />
       </main>

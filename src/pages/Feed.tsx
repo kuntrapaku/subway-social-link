@@ -3,7 +3,6 @@ import { Post } from "@/components/NewPost";
 import LeftSidebar from "@/components/index/LeftSidebar";
 import PostsSection from "@/components/index/PostsSection";
 import RightSidebar from "@/components/index/RightSidebar";
-import { EnhancedGlobalSearch } from "@/components/search/EnhancedGlobalSearch";
 import { getPosts as getPostsFromSupabase, getFrames as getFramesFromSupabase } from "@/services/postsService";
 import { getPosts, savePosts, getFrames, saveFrames } from "@/utils/postsStorage";
 
@@ -157,12 +156,7 @@ const Feed = () => {
     return (
       <div className="relative pb-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Search Bar */}
-          <div className="pt-6 pb-4 border-b border-gray-200 mb-6">
-            <EnhancedGlobalSearch />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8">
             <div className="animate-pulse bg-gray-200 rounded-lg h-64"></div>
             <div className="md:col-span-2 lg:col-span-1">
               <div className="animate-pulse bg-gray-200 rounded-lg h-96"></div>
@@ -177,12 +171,7 @@ const Feed = () => {
   return (
     <div className="relative pb-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Enhanced Search Bar */}
-        <div className="pt-6 pb-4 border-b border-orange-100 mb-6 bg-gradient-to-r from-orange-50 to-red-50 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
-          <EnhancedGlobalSearch />
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8">
           <LeftSidebar 
             activeCategory={activeCategory} 
             setActiveCategory={setActiveCategory} 
