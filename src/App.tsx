@@ -37,38 +37,67 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Public routes */}
+      {/* Public routes without Layout */}
       <Route path="/login" element={<Login />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/p/:slug" element={<PublicProfile />} />
       
       {/* Landing page for non-authenticated users, Feed for authenticated */}
-      <Route path="/" element={user ? <Layout><Feed /></Layout> : <LandingPage />} />
+      <Route path="/" element={user ? <Feed /> : <LandingPage />} />
       
-      {/* Protected routes */}
-      <Route path="/profile" element={<Layout><Profile /></Layout>} />
-      <Route path="/user/:userId" element={<Layout><UserProfile /></Layout>} />
-      <Route path="/messages" element={<Layout><Messages /></Layout>} />
-      <Route path="/network" element={<Layout><Network /></Layout>} />
-      <Route path="/projects" element={<Layout><Projects /></Layout>} />
-      <Route path="/projects/:id" element={<Layout><ProjectDetail /></Layout>} />
-      <Route path="/notifications" element={<Layout><Notifications /></Layout>} />
-      <Route path="/film-industry" element={<Layout><FilmIndustry /></Layout>} />
-      <Route path="/profile-builder" element={<Layout><ProfileBuilder /></Layout>} />
-      <Route path="/help-support" element={<Layout><HelpSupport /></Layout>} />
-      <Route path="/reports-analytics" element={<Layout><ReportsAnalytics /></Layout>} />
+      {/* Protected routes with Layout wrapper */}
+      <Route path="/feed" element={<Layout />}>
+        <Route index element={<Feed />} />
+      </Route>
+      <Route path="/profile" element={<Layout />}>
+        <Route index element={<Profile />} />
+      </Route>
+      <Route path="/user/:userId" element={<Layout />}>
+        <Route index element={<UserProfile />} />
+      </Route>
+      <Route path="/messages" element={<Layout />}>
+        <Route index element={<Messages />} />
+      </Route>
+      <Route path="/network" element={<Layout />}>
+        <Route index element={<Network />} />
+      </Route>
+      <Route path="/projects" element={<Layout />}>
+        <Route index element={<Projects />} />
+      </Route>
+      <Route path="/projects/:id" element={<Layout />}>
+        <Route index element={<ProjectDetail />} />
+      </Route>
+      <Route path="/notifications" element={<Layout />}>
+        <Route index element={<Notifications />} />
+      </Route>
+      <Route path="/film-industry" element={<Layout />}>
+        <Route index element={<FilmIndustry />} />
+      </Route>
+      <Route path="/profile-builder" element={<Layout />}>
+        <Route index element={<ProfileBuilder />} />
+      </Route>
+      <Route path="/help-support" element={<Layout />}>
+        <Route index element={<HelpSupport />} />
+      </Route>
+      <Route path="/reports-analytics" element={<Layout />}>
+        <Route index element={<ReportsAnalytics />} />
+      </Route>
       
-      {/* Admin routes */}
-      <Route path="/admin" element={
-        <AdminRoute>
-          <Layout><AdminDashboard /></Layout>
-        </AdminRoute>
-      } />
-      <Route path="/user-management" element={
-        <AdminRoute>
-          <Layout><UserManagement /></Layout>
-        </AdminRoute>
-      } />
+      {/* Admin routes with Layout wrapper */}
+      <Route path="/admin" element={<Layout />}>
+        <Route index element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        } />
+      </Route>
+      <Route path="/user-management" element={<Layout />}>
+        <Route index element={
+          <AdminRoute>
+            <UserManagement />
+          </AdminRoute>
+        } />
+      </Route>
       
       {/* 404 */}
       <Route path="*" element={<NotFound />} />
