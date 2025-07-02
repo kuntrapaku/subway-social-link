@@ -7,7 +7,7 @@ import { EnhancedGlobalSearch } from "@/components/search/EnhancedGlobalSearch";
 import { getPosts as getPostsFromSupabase, getFrames as getFramesFromSupabase } from "@/services/postsService";
 import { getPosts, savePosts, getFrames, saveFrames } from "@/utils/postsStorage";
 
-const Index = () => {
+const Feed = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const [posts, setPosts] = useState<Post[]>([]);
   const [frames, setFrames] = useState<Post[]>([]);
@@ -158,7 +158,7 @@ const Index = () => {
       <div className="relative pb-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Search Bar */}
-          <div className="pt-6 pb-4 border-b border-orange-100 mb-6 bg-gradient-to-r from-orange-50 to-red-50 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
+          <div className="pt-6 pb-4 border-b border-gray-200 mb-6">
             <EnhancedGlobalSearch />
           </div>
           
@@ -205,4 +205,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Feed;
