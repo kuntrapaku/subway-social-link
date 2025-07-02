@@ -35,7 +35,16 @@ import { useAuth } from "./context/AuthContext";
 const queryClient = new QueryClient();
 
 function AppRoutes() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+
+  // Show loading while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
 
   return (
     <Routes>
@@ -44,8 +53,8 @@ function AppRoutes() {
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/p/:slug" element={<PublicProfile />} />
       
-      {/* Landing page for non-authenticated users, Feed for authenticated */}
-      <Route path="/" element={user ? <Feed /> : <LandingPage />} />
+      {/* Root route - Feed for authenticated users, Landing for non-authenticated */}
+      <Route path="/" element={user ? <Layout><Feed /></Layout> : <LandingPage />} />
       
       {/* Protected routes with Layout wrapper */}
       <Route element={<Layout />}>

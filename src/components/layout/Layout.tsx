@@ -4,7 +4,7 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import EnhancedNavbar from "@/components/layout/EnhancedNavbar";
 import { useAuth } from "@/context/AuthContext";
 
-export const Layout: React.FC = () => {
+export const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,8 +39,8 @@ export const Layout: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <EnhancedNavbar />
-      <main className="w-full pt-0">
-        <Outlet />
+      <main className="w-full">
+        {children || <Outlet />}
       </main>
     </div>
   );
