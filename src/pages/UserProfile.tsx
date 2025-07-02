@@ -27,7 +27,67 @@ const UserProfile = () => {
 
       try {
         setLoading(true);
-        const fetchedProfile = await getProfileById(userId);
+        
+        // First, check if it's a slug-based search (like "ayaan-khan")
+        let fetchedProfile: Profile | null = null;
+        
+        // Try to find by user ID first
+        fetchedProfile = await getProfileById(userId);
+        
+        // If not found and it looks like a slug, try to find by name
+        if (!fetchedProfile && userId.includes('-')) {
+          const nameFromSlug = userId.replace(/-/g, ' ');
+          
+          // Check localStorage first for temp users
+          const localProfile = localStorage.getItem('user-profile');
+          if (localProfile) {
+            const profile = JSON.parse(localProfile);
+            if (profile.name?.toLowerCase() === nameFromSlug.toLowerCase()) {
+              fetchedProfile = {
+                id: profile.id || profile.user_id,
+                name: profile.name,
+                title: profile.title || 'Film Professional',
+                location: profile.location || 'Mumbai, India',
+                connections: profile.connections || 0,
+                company: profile.company || '',
+                joinDate: profile.joinDate || new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+                website: profile.website || '',
+                bio: profile.bio || 'Welcome to MovConnect!',
+                user_id: profile.user_id || profile.id
+              };
+            }
+          }
+          
+          // If still not found, create a mock profile for demo users
+          if (!fetchedProfile) {
+            const mockUsers = [
+              { name: 'Sarayu Kuntrapaku', role: 'Film Director', location: 'Mumbai', id: 'sarayu-kuntrapaku' },
+              { name: 'Surendra Kuntrapaku', role: 'Producer & Director', location: 'Hyderabad', id: 'surendra-kuntrapaku' },
+              { name: 'Ayaan Khan', role: 'Cinematographer', location: 'Mumbai', id: 'ayaan-khan' },
+              { name: 'Rajesh Kumar', role: 'Cinematographer', location: 'Mumbai', id: 'rajesh-kumar' },
+              { name: 'Priya Sharma', role: 'Art Director', location: 'Delhi', id: 'priya-sharma' },
+              { name: 'Vikram Singh', role: 'Film Director', location: 'Chennai', id: 'vikram-singh' },
+              { name: 'Ananya Patel', role: 'Music Composer', location: 'Mumbai', id: 'ananya-patel' },
+              { name: 'Divya Singh', role: 'Actress & Model', location: 'Mumbai', id: 'divya-singh' },
+            ];
+            
+            const matchedUser = mockUsers.find(u => u.id === userId);
+            if (matchedUser) {
+              fetchedProfile = {
+                id: matchedUser.id,
+                name: matchedUser.name,
+                title: matchedUser.role,
+                location: matchedUser.location,
+                connections: Math.floor(Math.random() * 500) + 50,
+                company: 'Independent Filmmaker',
+                joinDate: 'January 2024',
+                website: 'www.example.com',
+                bio: `Passionate ${matchedUser.role.toLowerCase()} with years of experience in the film industry. Always looking to collaborate on exciting projects.`,
+                user_id: matchedUser.id
+              };
+            }
+          }
+        }
         
         if (!fetchedProfile) {
           setError("User not found");
@@ -106,7 +166,71 @@ const UserProfile = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
-          <ProfileCard isCurrentUser={user?.id === profile.user_id} userId={profile.user_id} />
+          <div className="subway-card animate-fade-in">
+            <div className="relative">
+              <div className="h-32 bg-gradient-to-r from-orange-400 to-red-600 rounded-t-lg"></div>
+              <div className="absolute -bottom-12 left-4">
+                <div className="h-24 w-24 rounded-full bg-white p-1">
+                  <div className="h-full w-full rounded-full bg-gradient-to-r from-orange-100 to-red-100 flex items-center justify-center">
+                    <User className="h-12 w-12 text-orange-600" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-14 px-2">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xl font-bold">{profile.name}</h2>
+                  <p className="text-gray-600">{profile.title}</p>
+                  <div className="flex items-center text-sm text-gray-500 mt-1">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    <span>{profile.location}</span>
+                  </div>
+                  <div className="flex items-center text-sm text-orange-600 mt-1 font-medium">
+                    <Users className="h-4 w-4 mr-1" />
+                    <span>{profile.connections} connections</span>
+                  </div>
+                </div>
+                <div>
+                  {user?.id === profile.user_id ? (
+                    <Button variant="outline" className="border-orange-600 text-orange-600 hover:bg-orange-50">
+                      Edit Profile
+                    </Button>
+                  ) : (
+                    <div className="space-y-2">
+                      <Button className="bg-orange-600 text-white hover:bg-orange-700 w-full">
+                        Connect
+                      </Button>
+                      <Button variant="outline" className="border-orange-600 text-orange-600 hover:bg-orange-50 w-full">
+                        <MessageSquare className="h-4 w-4 mr-1" />
+                        Message
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center text-sm">
+                  <Briefcase className="h-4 w-4 mr-2 text-gray-500" />
+                  <span>{profile.company || "MovCon Studios"}</span>
+                </div>
+                <div className="flex items-center text-sm">
+                  <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                  <span>Joined {profile.joinDate}</span>
+                </div>
+                <div className="flex items-center text-sm">
+                  <LinkIcon className="h-4 w-4 mr-2 text-gray-500" />
+                  <a href={profile.website ? `https://${profile.website}` : "#"} className="text-orange-600 hover:underline">
+                    {profile.website || "Not specified"}
+                  </a>
+                </div>
+              </div>
+              <div className="mt-4">
+                <h3 className="text-md font-medium">About</h3>
+                <p className="text-sm text-gray-600 mt-1">{profile.bio}</p>
+              </div>
+            </div>
+          </div>
         </div>
         
         <div className="lg:col-span-2">
