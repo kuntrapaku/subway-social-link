@@ -1,4 +1,3 @@
-
 import { User, MapPin, Briefcase, Calendar, Link, Users, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -24,13 +23,52 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      // Check localStorage for updated profile first
+      // Always check localStorage first for the most up-to-date profile
       const localProfile = localStorage.getItem('user-profile');
       if (localProfile) {
-        const parsedProfile = JSON.parse(localProfile);
-        setProfile(parsedProfile);
-        setLoading(false);
-        return;
+        try {
+          const parsedProfile = JSON.parse(localProfile);
+          console.log('Using localStorage profile:', parsedProfile);
+          setProfile(parsedProfile);
+          setLoading(false);
+          return;
+        } catch (error) {
+          console.error('Error parsing localStorage profile:', error);
+        }
+      }
+
+      // If user is authenticated, try to get from Supabase
+      if (user && 'email' in user) {
+        try {
+          const { data: supabaseProfile } = await supabase
+            .from('profile_builder')
+            .select('*')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          if (supabaseProfile) {
+            const profileData = {
+              id: supabaseProfile.id,
+              name: supabaseProfile.display_name || 'Film Professional',
+              title: 'Film Professional',
+              location: 'Mumbai, India',
+              connections: 0,
+              company: 'MovCon Studios',
+              joinDate: new Date(supabaseProfile.created_at || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+              website: '',
+              bio: supabaseProfile.bio || 'Welcome to MovConnect!',
+              user_id: user.id
+            };
+            
+            // Cache in localStorage
+            localStorage.setItem('user-profile', JSON.stringify(profileData));
+            setProfile(profileData);
+            setLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.error('Error fetching from Supabase:', error);
+        }
       }
 
       // Convert AuthUser to compatible User for profile operations
@@ -47,7 +85,7 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
           title: "Film Professional",
           location: "Mumbai, India",
           connections: 0,
-          company: "",
+          company: "MovCon Studios",
           joinDate: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
           website: "",
           bio: "Welcome to MovConnect!",
@@ -69,6 +107,7 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
     
     // Add event listener to refresh profile when it's updated
     const handleProfileUpdate = () => {
+      console.log('Profile update event received, refetching...');
       fetchProfile();
     };
     
@@ -108,8 +147,9 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
       };
       setProfile(newProfile);
 
-      // Update localStorage cache
+      // Update localStorage cache immediately
       localStorage.setItem('user-profile', JSON.stringify(newProfile));
+      console.log('Profile saved to localStorage:', newProfile);
 
       // Also update using the existing profile utility
       const compatibleUser = toCompatibleUser(user);
@@ -118,12 +158,12 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
       }
 
       // Update temp user data if it's a temp user
-      if (user.id.startsWith('temp-')) {
+      if ('isTemporary' in user && user.isTemporary) {
         const tempUserData = {
           ...user,
           username: updatedProfile.name
         };
-        localStorage.setItem('temp-user', JSON.stringify(tempUserData));
+        localStorage.setItem('tempUser', JSON.stringify(tempUserData));
       }
 
       toast({

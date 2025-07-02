@@ -85,7 +85,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Handle sign out event
         if (event === 'SIGNED_OUT') {
           console.log("User signed out, redirecting to login");
+          // Clear all profile data on sign out
+          localStorage.removeItem('user-profile');
+          localStorage.removeItem('tempUser');
           navigate('/login', { replace: true });
+        }
+        
+        // Handle sign in event - restore profile data
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log("User signed in, restoring profile data");
+          setTimeout(() => {
+            restoreProfileData(session.user.id);
+          }, 100);
         }
       }
     );
@@ -99,6 +110,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
+      
+      // Restore profile data if we have a session
+      if (session?.user) {
+        setTimeout(() => {
+          restoreProfileData(session.user.id);
+        }, 100);
+      }
     });
 
     return () => {
@@ -106,6 +124,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       subscription.unsubscribe();
     };
   }, [navigate]);
+
+  const restoreProfileData = async (userId: string) => {
+    try {
+      // Try to get profile from Supabase first
+      const { data: profile } = await supabase
+        .from('profile_builder')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (profile) {
+        // Save to localStorage for faster access
+        const profileData = {
+          id: profile.id,
+          name: profile.display_name || 'Film Professional',
+          title: 'Film Professional',
+          location: 'Mumbai, India',
+          connections: 0,
+          company: 'MovCon Studios',
+          joinDate: new Date(profile.created_at || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          website: '',
+          bio: profile.bio || 'Welcome to MovConnect!',
+          user_id: userId
+        };
+        localStorage.setItem('user-profile', JSON.stringify(profileData));
+        console.log('Profile restored from Supabase:', profileData);
+        
+        // Trigger profile update event
+        window.dispatchEvent(new Event("profile-updated"));
+      }
+    } catch (error) {
+      console.error('Error restoring profile data:', error);
+    }
+  };
 
   const signOut = async () => {
     try {
@@ -117,6 +169,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (tempUser) {
         // Handle temp user logout
         localStorage.removeItem('tempUser');
+        localStorage.removeItem('user-profile');
         setUser(null);
         setSession(null);
         
@@ -138,7 +191,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw error;
       }
       
-      // Clear local state immediately
+      // Clear local state and storage immediately
+      localStorage.removeItem('user-profile');
+      localStorage.removeItem('tempUser');
       setSession(null);
       setUser(null);
       
@@ -146,6 +201,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       console.error("Sign out failed:", error);
       // Even if there's an error, clear local state
+      localStorage.removeItem('user-profile');
+      localStorage.removeItem('tempUser');
       setSession(null);
       setUser(null);
       throw error;

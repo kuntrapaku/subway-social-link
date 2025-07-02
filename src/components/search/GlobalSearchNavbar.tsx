@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Search, Loader2, User, FolderOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -40,7 +39,7 @@ export const GlobalSearchNavbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Real search function that queries the database
+  // Enhanced search function that looks in multiple places
   useEffect(() => {
     const searchData = async () => {
       if (!query.trim() || query.length < 1) {
@@ -57,7 +56,7 @@ export const GlobalSearchNavbar = () => {
         const searchResults: SearchResult[] = [];
         const queryLower = query.toLowerCase();
 
-        // Search in Supabase profiles table
+        // 1. Search in Supabase profile_builder table (for users who used profile builder)
         const { data: profiles, error: profileError } = await supabase
           .from('profile_builder')
           .select('*')
@@ -66,7 +65,6 @@ export const GlobalSearchNavbar = () => {
 
         if (!profileError && profiles) {
           profiles.forEach(profile => {
-            // Create a user-friendly ID from the display name
             const userSlug = profile.display_name?.toLowerCase().replace(/\s+/g, '-') || profile.user_id;
             searchResults.push({
               type: 'user',
@@ -78,22 +76,52 @@ export const GlobalSearchNavbar = () => {
           });
         }
 
-        // Search in localStorage profiles for temp users
+        // 2. Search in localStorage profiles (for current session users)
         const localProfile = localStorage.getItem('user-profile');
         if (localProfile) {
-          const profile = JSON.parse(localProfile);
-          if (profile.name?.toLowerCase().includes(queryLower)) {
-            searchResults.push({
-              type: 'user',
-              id: profile.id || profile.user_id,
-              title: profile.name,
-              subtitle: profile.title || 'Film Professional',
-              userId: profile.name.toLowerCase().replace(/\s+/g, '-')
-            });
+          try {
+            const profile = JSON.parse(localProfile);
+            if (profile.name?.toLowerCase().includes(queryLower)) {
+              const userSlug = profile.name.toLowerCase().replace(/\s+/g, '-');
+              searchResults.push({
+                type: 'user',
+                id: profile.id || profile.user_id,
+                title: profile.name,
+                subtitle: profile.title || 'Film Professional',
+                userId: userSlug
+              });
+            }
+          } catch (error) {
+            console.error('Error parsing localStorage profile:', error);
           }
         }
 
-        // Add some mock users for demo purposes (including the ones in your database)
+        // 3. Search in stored profiles (for users who have been searched before)
+        const storedProfiles = localStorage.getItem('movconnect_profiles');
+        if (storedProfiles) {
+          try {
+            const profiles = JSON.parse(storedProfiles);
+            Object.values(profiles).forEach((profile: any) => {
+              if (profile.name?.toLowerCase().includes(queryLower)) {
+                const userSlug = profile.name.toLowerCase().replace(/\s+/g, '-');
+                const exists = searchResults.some(result => result.userId === userSlug);
+                if (!exists) {
+                  searchResults.push({
+                    type: 'user',
+                    id: profile.id || profile.user_id,
+                    title: profile.name,
+                    subtitle: profile.title || 'Film Professional',
+                    userId: userSlug
+                  });
+                }
+              }
+            });
+          } catch (error) {
+            console.error('Error parsing stored profiles:', error);
+          }
+        }
+
+        // 4. Add demo users for search completeness
         const mockUsers = [
           { name: 'Sarayu Kuntrapaku', role: 'Film Director', location: 'Mumbai', id: 'sarayu-kuntrapaku' },
           { name: 'Surendra Kuntrapaku', role: 'Producer & Director', location: 'Hyderabad', id: 'surendra-kuntrapaku' },
@@ -109,7 +137,6 @@ export const GlobalSearchNavbar = () => {
           if (user.name.toLowerCase().includes(queryLower) || 
               user.role.toLowerCase().includes(queryLower) ||
               user.location.toLowerCase().includes(queryLower)) {
-            // Avoid duplicates
             const exists = searchResults.some(result => result.userId === user.id);
             if (!exists) {
               searchResults.push({
@@ -123,7 +150,7 @@ export const GlobalSearchNavbar = () => {
           }
         });
 
-        // Search projects
+        // 5. Search projects
         const { data: projects, error: projectError } = await supabase
           .from('projects')
           .select('*')
@@ -143,6 +170,7 @@ export const GlobalSearchNavbar = () => {
           });
         }
 
+        console.log('Search results for:', query, searchResults);
         setResults(searchResults.slice(0, 8));
       } catch (error) {
         console.error('Search error:', error);
@@ -189,7 +217,6 @@ export const GlobalSearchNavbar = () => {
     setQuery("");
     
     if (result.type === 'user') {
-      // Navigate to profile with the userId
       navigate(`/profile/${result.userId}`);
     } else {
       navigate(`/projects/${result.id}`);
