@@ -82,19 +82,19 @@ function AppRoutes() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TempAuthProvider>
-          <NotificationsProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
+      <BrowserRouter>
+        <AuthProvider>
+          <TempAuthProvider>
+            <NotificationsProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
                 <AppRoutes />
-              </BrowserRouter>
-            </TooltipProvider>
-          </NotificationsProvider>
-        </TempAuthProvider>
-      </AuthProvider>
+              </TooltipProvider>
+            </NotificationsProvider>
+          </TempAuthProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 }
