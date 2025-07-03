@@ -40,7 +40,7 @@ export const GlobalSearchNavbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Enhanced search function that prioritizes database results
+  // Search function that prioritizes database results
   useEffect(() => {
     const searchData = async () => {
       if (!query.trim() || query.length < 1) {
@@ -59,7 +59,7 @@ export const GlobalSearchNavbar = () => {
 
         console.log('Searching for:', query);
 
-        // 1. PRIORITY: Search in Supabase profile_builder table (ALL users with profiles)
+        // 1. Search in Supabase profile_builder table for ALL users
         try {
           const { data: profiles, error: profileError } = await supabase
             .from('profile_builder')
@@ -67,11 +67,11 @@ export const GlobalSearchNavbar = () => {
             .or(`display_name.ilike.%${query}%,bio.ilike.%${query}%`)
             .limit(10);
 
-          console.log('Supabase search results:', profiles, 'Error:', profileError);
+          console.log('Supabase profile search results:', profiles, 'Error:', profileError);
 
           if (!profileError && profiles && profiles.length > 0) {
             profiles.forEach(profile => {
-              const userSlug = profile.display_name?.toLowerCase().replace(/\s+/g, '-') || profile.user_id;
+              const userSlug = profile.user_id; // Use user_id directly for routing
               searchResults.push({
                 type: 'user',
                 id: profile.id,
@@ -85,71 +85,43 @@ export const GlobalSearchNavbar = () => {
           console.error('Supabase search error:', error);
         }
 
-        // 2. Search in localStorage for current session profile
-        const localProfile = localStorage.getItem('user-profile');
-        if (localProfile) {
+        // 2. Search projects if no users found
+        if (searchResults.length < 5) {
           try {
-            const profile = JSON.parse(localProfile);
-            if (profile.name?.toLowerCase().includes(queryLower)) {
-              const userSlug = profile.name.toLowerCase().replace(/\s+/g, '-');
-              const exists = searchResults.some(result => result.title.toLowerCase() === profile.name.toLowerCase());
-              if (!exists) {
+            const { data: projects, error: projectError } = await supabase
+              .from('projects')
+              .select('*')
+              .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
+              .eq('is_public', true)
+              .limit(3);
+
+            if (!projectError && projects) {
+              projects.forEach(project => {
                 searchResults.push({
-                  type: 'user',
-                  id: profile.id || profile.user_id,
-                  title: profile.name,
-                  subtitle: `${profile.title || 'Film Professional'} • ${profile.location || 'Mumbai, India'}`,
-                  userId: userSlug
+                  type: 'project',
+                  id: project.id,
+                  title: project.title,
+                  subtitle: project.description?.substring(0, 50) + '...' || 'Film Project',
+                  tags: project.tags || []
                 });
-              }
+              });
             }
           } catch (error) {
-            console.error('Error parsing localStorage profile:', error);
+            console.error('Project search error:', error);
           }
         }
 
-        // 3. Search in stored profiles cache
-        const storedProfiles = localStorage.getItem('movconnect_profiles');
-        if (storedProfiles) {
-          try {
-            const profiles = JSON.parse(storedProfiles);
-            Object.values(profiles).forEach((profile: any) => {
-              if (profile.name?.toLowerCase().includes(queryLower)) {
-                const userSlug = profile.name.toLowerCase().replace(/\s+/g, '-');
-                const exists = searchResults.some(result => result.title.toLowerCase() === profile.name.toLowerCase());
-                if (!exists) {
-                  searchResults.push({
-                    type: 'user',
-                    id: profile.id || profile.user_id,
-                    title: profile.name,
-                    subtitle: `${profile.title || 'Film Professional'} • ${profile.location || 'Mumbai, India'}`,
-                    userId: userSlug
-                  });
-                }
-              }
-            });
-          } catch (error) {
-            console.error('Error parsing stored profiles:', error);
-          }
-        }
-
-        // 4. Add demo/mock users if no database results found
+        // 3. Add mock users only if no database results
         if (searchResults.length === 0) {
           const mockUsers = [
-            { name: 'Sarayu Kuntrapaku', role: 'Film Director', location: 'Mumbai', id: 'sarayu-kuntrapaku' },
-            { name: 'Surendra Kuntrapaku', role: 'Producer & Director', location: 'Hyderabad', id: 'surendra-kuntrapaku' },
             { name: 'Ayaan Khan', role: 'Cinematographer', location: 'Mumbai', id: 'ayaan-khan' },
             { name: 'Rajesh Kumar', role: 'Cinematographer', location: 'Mumbai', id: 'rajesh-kumar' },
             { name: 'Priya Sharma', role: 'Art Director', location: 'Delhi', id: 'priya-sharma' },
             { name: 'Vikram Singh', role: 'Film Director', location: 'Chennai', id: 'vikram-singh' },
-            { name: 'Ananya Patel', role: 'Music Composer', location: 'Mumbai', id: 'ananya-patel' },
-            { name: 'Divya Singh', role: 'Actress & Model', location: 'Mumbai', id: 'divya-singh' },
           ];
 
           mockUsers.forEach(user => {
-            if (user.name.toLowerCase().includes(queryLower) || 
-                user.role.toLowerCase().includes(queryLower) ||
-                user.location.toLowerCase().includes(queryLower)) {
+            if (user.name.toLowerCase().includes(queryLower)) {
               searchResults.push({
                 type: 'user',
                 id: user.id,
@@ -159,30 +131,6 @@ export const GlobalSearchNavbar = () => {
               });
             }
           });
-        }
-
-        // 5. Search projects
-        try {
-          const { data: projects, error: projectError } = await supabase
-            .from('projects')
-            .select('*')
-            .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
-            .eq('is_public', true)
-            .limit(3);
-
-          if (!projectError && projects) {
-            projects.forEach(project => {
-              searchResults.push({
-                type: 'project',
-                id: project.id,
-                title: project.title,
-                subtitle: project.description?.substring(0, 50) + '...' || 'Film Project',
-                tags: project.tags || []
-              });
-            });
-          }
-        } catch (error) {
-          console.error('Project search error:', error);
         }
 
         console.log('Final search results:', searchResults);

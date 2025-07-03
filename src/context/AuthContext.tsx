@@ -53,7 +53,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // If we have a temp user, use that and skip Supabase auth
     if (checkTempUser()) {
-      // Listen for storage events for temp auth
       const handleStorageChange = (e: StorageEvent) => {
         if (e.key === 'tempUser') {
           if (e.newValue) {
@@ -76,47 +75,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Set up Supabase auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
-        setIsLoading(false);
+        
+        // Handle sign in event - create/update profile
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log("User signed in, creating/updating profile");
+          await createOrUpdateProfile(session.user);
+        }
         
         // Handle sign out event
         if (event === 'SIGNED_OUT') {
           console.log("User signed out, redirecting to login");
-          // Clear all profile data on sign out
           localStorage.removeItem('user-profile');
           localStorage.removeItem('tempUser');
           navigate('/login', { replace: true });
         }
         
-        // Handle sign in event - restore profile data
-        if (event === 'SIGNED_IN' && session?.user) {
-          console.log("User signed in, restoring profile data");
-          setTimeout(() => {
-            restoreProfileData(session.user.id);
-          }, 100);
-        }
+        setIsLoading(false);
       }
     );
 
     // Check for existing Supabase session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error) {
         console.error("Error getting session:", error);
       }
       console.log("Initial session check:", session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
-      setIsLoading(false);
       
-      // Restore profile data if we have a session
+      // Create/update profile if we have a session
       if (session?.user) {
-        setTimeout(() => {
-          restoreProfileData(session.user.id);
-        }, 100);
+        await createOrUpdateProfile(session.user);
       }
+      
+      setIsLoading(false);
     });
 
     return () => {
@@ -125,37 +121,72 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [navigate]);
 
-  const restoreProfileData = async (userId: string) => {
+  const createOrUpdateProfile = async (user: User) => {
     try {
-      // Try to get profile from Supabase first
-      const { data: profile } = await supabase
+      console.log('Creating/updating profile for user:', user.id);
+      
+      // Check if profile exists
+      const { data: existingProfile } = await supabase
         .from('profile_builder')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .maybeSingle();
-      
-      if (profile) {
-        // Save to localStorage for faster access
-        const profileData = {
-          id: profile.id,
-          name: profile.display_name || 'Film Professional',
-          title: 'Film Professional',
-          location: 'Mumbai, India',
-          connections: 0,
-          company: 'MovCon Studios',
-          joinDate: new Date(profile.created_at || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-          website: '',
-          bio: profile.bio || 'Welcome to MovConnect!',
-          user_id: userId
-        };
-        localStorage.setItem('user-profile', JSON.stringify(profileData));
-        console.log('Profile restored from Supabase:', profileData);
-        
-        // Trigger profile update event
-        window.dispatchEvent(new Event("profile-updated"));
+
+      const profileData = {
+        user_id: user.id,
+        display_name: user.user_metadata?.name || user.email?.split('@')[0] || 'Film Professional',
+        bio: 'Welcome to MovConnect!',
+        is_published: true,
+        updated_at: new Date().toISOString()
+      };
+
+      if (existingProfile) {
+        // Update existing profile
+        const { error } = await supabase
+          .from('profile_builder')
+          .update(profileData)
+          .eq('user_id', user.id);
+          
+        if (error) {
+          console.error('Error updating profile:', error);
+        } else {
+          console.log('Profile updated successfully');
+        }
+      } else {
+        // Create new profile
+        const { error } = await supabase
+          .from('profile_builder')
+          .insert(profileData);
+          
+        if (error) {
+          console.error('Error creating profile:', error);
+        } else {
+          console.log('Profile created successfully');
+        }
       }
+
+      // Cache profile in localStorage
+      const localProfileData = {
+        id: user.id,
+        name: profileData.display_name,
+        title: 'Film Professional',
+        location: 'Mumbai, India',
+        connections: 0,
+        company: 'MovCon Studios',
+        joinDate: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        website: '',
+        bio: profileData.bio,
+        user_id: user.id
+      };
+      
+      localStorage.setItem('user-profile', JSON.stringify(localProfileData));
+      console.log('Profile cached in localStorage:', localProfileData);
+      
+      // Trigger profile update event
+      window.dispatchEvent(new Event("profile-updated"));
+      
     } catch (error) {
-      console.error('Error restoring profile data:', error);
+      console.error('Error in createOrUpdateProfile:', error);
     }
   };
 
@@ -167,13 +198,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Check if this is a temp user
       const tempUser = localStorage.getItem('tempUser');
       if (tempUser) {
-        // Handle temp user logout
         localStorage.removeItem('tempUser');
         localStorage.removeItem('user-profile');
         setUser(null);
         setSession(null);
         
-        // Dispatch storage event for cross-component sync
         window.dispatchEvent(new StorageEvent('storage', {
           key: 'tempUser',
           newValue: null
@@ -191,7 +220,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw error;
       }
       
-      // Clear local state and storage immediately
       localStorage.removeItem('user-profile');
       localStorage.removeItem('tempUser');
       setSession(null);
@@ -200,7 +228,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("User signed out successfully");
     } catch (error) {
       console.error("Sign out failed:", error);
-      // Even if there's an error, clear local state
       localStorage.removeItem('user-profile');
       localStorage.removeItem('tempUser');
       setSession(null);

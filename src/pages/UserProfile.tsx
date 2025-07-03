@@ -2,12 +2,24 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { getProfileById, Profile } from "@/utils/profiles";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { User, MapPin, Briefcase, Calendar, Link as LinkIcon, Users, MessageSquare, ArrowLeft, Film } from "lucide-react";
-import ProfileCard from "@/components/ProfileCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Profile {
+  id: string;
+  name: string;
+  title: string;
+  location: string;
+  connections: number;
+  company: string;
+  joinDate: string;
+  website: string;
+  bio: string;
+  user_id: string;
+}
 
 const UserProfile = () => {
   const { userId } = useParams();
@@ -27,70 +39,65 @@ const UserProfile = () => {
 
       try {
         setLoading(true);
+        console.log('Fetching profile for userId:', userId);
         
-        // First, check if it's a slug-based search (like "ayaan-khan")
         let fetchedProfile: Profile | null = null;
         
-        // Try to find by user ID first
-        fetchedProfile = await getProfileById(userId);
+        // Try to find in Supabase profile_builder by user_id
+        const { data: supabaseProfile, error: supabaseError } = await supabase
+          .from('profile_builder')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
         
-        // If not found and it looks like a slug, try to find by name
+        console.log('Supabase profile query result:', supabaseProfile, 'Error:', supabaseError);
+        
+        if (supabaseProfile && !supabaseError) {
+          fetchedProfile = {
+            id: supabaseProfile.id,
+            name: supabaseProfile.display_name || 'Film Professional',
+            title: 'Film Professional',
+            location: 'Mumbai, India',
+            connections: Math.floor(Math.random() * 500) + 50,
+            company: 'MovCon Studios',
+            joinDate: new Date(supabaseProfile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+            website: 'www.movconnect.com',
+            bio: supabaseProfile.bio || 'Welcome to MovConnect!',
+            user_id: supabaseProfile.user_id
+          };
+          console.log('Found profile in Supabase:', fetchedProfile);
+        }
+        
+        // If not found in database and looks like a slug, try mock users
         if (!fetchedProfile && userId.includes('-')) {
-          const nameFromSlug = userId.replace(/-/g, ' ');
+          const mockUsers = [
+            { name: 'Ayaan Khan', role: 'Cinematographer', location: 'Mumbai', id: 'ayaan-khan' },
+            { name: 'Rajesh Kumar', role: 'Cinematographer', location: 'Mumbai', id: 'rajesh-kumar' },
+            { name: 'Priya Sharma', role: 'Art Director', location: 'Delhi', id: 'priya-sharma' },
+            { name: 'Vikram Singh', role: 'Film Director', location: 'Chennai', id: 'vikram-singh' },
+          ];
           
-          // Check localStorage first for temp users
-          const localProfile = localStorage.getItem('user-profile');
-          if (localProfile) {
-            const profile = JSON.parse(localProfile);
-            if (profile.name?.toLowerCase() === nameFromSlug.toLowerCase()) {
-              fetchedProfile = {
-                id: profile.id || profile.user_id,
-                name: profile.name,
-                title: profile.title || 'Film Professional',
-                location: profile.location || 'Mumbai, India',
-                connections: profile.connections || 0,
-                company: profile.company || '',
-                joinDate: profile.joinDate || new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-                website: profile.website || '',
-                bio: profile.bio || 'Welcome to MovConnect!',
-                user_id: profile.user_id || profile.id
-              };
-            }
-          }
-          
-          // If still not found, create a mock profile for demo users
-          if (!fetchedProfile) {
-            const mockUsers = [
-              { name: 'Sarayu Kuntrapaku', role: 'Film Director', location: 'Mumbai', id: 'sarayu-kuntrapaku' },
-              { name: 'Surendra Kuntrapaku', role: 'Producer & Director', location: 'Hyderabad', id: 'surendra-kuntrapaku' },
-              { name: 'Ayaan Khan', role: 'Cinematographer', location: 'Mumbai', id: 'ayaan-khan' },
-              { name: 'Rajesh Kumar', role: 'Cinematographer', location: 'Mumbai', id: 'rajesh-kumar' },
-              { name: 'Priya Sharma', role: 'Art Director', location: 'Delhi', id: 'priya-sharma' },
-              { name: 'Vikram Singh', role: 'Film Director', location: 'Chennai', id: 'vikram-singh' },
-              { name: 'Ananya Patel', role: 'Music Composer', location: 'Mumbai', id: 'ananya-patel' },
-              { name: 'Divya Singh', role: 'Actress & Model', location: 'Mumbai', id: 'divya-singh' },
-            ];
-            
-            const matchedUser = mockUsers.find(u => u.id === userId);
-            if (matchedUser) {
-              fetchedProfile = {
-                id: matchedUser.id,
-                name: matchedUser.name,
-                title: matchedUser.role,
-                location: matchedUser.location,
-                connections: Math.floor(Math.random() * 500) + 50,
-                company: 'Independent Filmmaker',
-                joinDate: 'January 2024',
-                website: 'www.example.com',
-                bio: `Passionate ${matchedUser.role.toLowerCase()} with years of experience in the film industry. Always looking to collaborate on exciting projects.`,
-                user_id: matchedUser.id
-              };
-            }
+          const matchedUser = mockUsers.find(u => u.id === userId);
+          if (matchedUser) {
+            fetchedProfile = {
+              id: matchedUser.id,
+              name: matchedUser.name,
+              title: matchedUser.role,
+              location: matchedUser.location,
+              connections: Math.floor(Math.random() * 500) + 50,
+              company: 'Independent Filmmaker',
+              joinDate: 'January 2024',
+              website: 'www.example.com',
+              bio: `Passionate ${matchedUser.role.toLowerCase()} with years of experience in the film industry. Always looking to collaborate on exciting projects.`,
+              user_id: matchedUser.id
+            };
+            console.log('Found mock user profile:', fetchedProfile);
           }
         }
         
         if (!fetchedProfile) {
           setError("User not found");
+          console.log('No profile found for userId:', userId);
         } else {
           setProfile(fetchedProfile);
         }
@@ -212,7 +219,7 @@ const UserProfile = () => {
               <div className="mt-4 space-y-2">
                 <div className="flex items-center text-sm">
                   <Briefcase className="h-4 w-4 mr-2 text-gray-500" />
-                  <span>{profile.company || "MovCon Studios"}</span>
+                  <span>{profile.company}</span>
                 </div>
                 <div className="flex items-center text-sm">
                   <Calendar className="h-4 w-4 mr-2 text-gray-500" />
@@ -237,19 +244,19 @@ const UserProfile = () => {
           <div className="subway-card mb-4">
             <Tabs defaultValue="posts">
               <TabsList className="grid grid-cols-4 mb-4">
-                <TabsTrigger value="posts" className="data-[state=active]:text-subway-600 data-[state=active]:border-b-2 data-[state=active]:border-subway-600">
+                <TabsTrigger value="posts">
                   <MessageSquare className="h-4 w-4 mr-1" />
                   <span>Posts</span>
                 </TabsTrigger>
-                <TabsTrigger value="photos" className="data-[state=active]:text-subway-600 data-[state=active]:border-b-2 data-[state=active]:border-subway-600">
+                <TabsTrigger value="photos">
                   <User className="h-4 w-4 mr-1" />
                   <span>Photos</span>
                 </TabsTrigger>
-                <TabsTrigger value="videos" className="data-[state=active]:text-subway-600 data-[state=active]:border-b-2 data-[state=active]:border-subway-600">
+                <TabsTrigger value="videos">
                   <Film className="h-4 w-4 mr-1" />
                   <span>Videos</span>
                 </TabsTrigger>
-                <TabsTrigger value="connections" className="data-[state=active]:text-subway-600 data-[state=active]:border-b-2 data-[state=active]:border-subway-600">
+                <TabsTrigger value="connections">
                   <Users className="h-4 w-4 mr-1" />
                   <span>Connections</span>
                 </TabsTrigger>
