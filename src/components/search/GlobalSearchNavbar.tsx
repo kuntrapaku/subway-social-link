@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Search, Loader2, User, FolderOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -39,7 +40,7 @@ export const GlobalSearchNavbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Enhanced search function that looks in multiple places
+  // Enhanced search function that prioritizes database results
   useEffect(() => {
     const searchData = async () => {
       if (!query.trim() || query.length < 1) {
@@ -56,47 +57,58 @@ export const GlobalSearchNavbar = () => {
         const searchResults: SearchResult[] = [];
         const queryLower = query.toLowerCase();
 
-        // 1. Search in Supabase profile_builder table (for users who used profile builder)
-        const { data: profiles, error: profileError } = await supabase
-          .from('profile_builder')
-          .select('*')
-          .or(`display_name.ilike.%${query}%,bio.ilike.%${query}%`)
-          .limit(5);
+        console.log('Searching for:', query);
 
-        if (!profileError && profiles) {
-          profiles.forEach(profile => {
-            const userSlug = profile.display_name?.toLowerCase().replace(/\s+/g, '-') || profile.user_id;
-            searchResults.push({
-              type: 'user',
-              id: profile.id,
-              title: profile.display_name || 'User',
-              subtitle: `Film Professional`,
-              userId: userSlug
+        // 1. PRIORITY: Search in Supabase profile_builder table (ALL users with profiles)
+        try {
+          const { data: profiles, error: profileError } = await supabase
+            .from('profile_builder')
+            .select('*')
+            .or(`display_name.ilike.%${query}%,bio.ilike.%${query}%`)
+            .limit(10);
+
+          console.log('Supabase search results:', profiles, 'Error:', profileError);
+
+          if (!profileError && profiles && profiles.length > 0) {
+            profiles.forEach(profile => {
+              const userSlug = profile.display_name?.toLowerCase().replace(/\s+/g, '-') || profile.user_id;
+              searchResults.push({
+                type: 'user',
+                id: profile.id,
+                title: profile.display_name || 'Film Professional',
+                subtitle: `Film Professional • Mumbai, India`,
+                userId: userSlug
+              });
             });
-          });
+          }
+        } catch (error) {
+          console.error('Supabase search error:', error);
         }
 
-        // 2. Search in localStorage profiles (for current session users)
+        // 2. Search in localStorage for current session profile
         const localProfile = localStorage.getItem('user-profile');
         if (localProfile) {
           try {
             const profile = JSON.parse(localProfile);
             if (profile.name?.toLowerCase().includes(queryLower)) {
               const userSlug = profile.name.toLowerCase().replace(/\s+/g, '-');
-              searchResults.push({
-                type: 'user',
-                id: profile.id || profile.user_id,
-                title: profile.name,
-                subtitle: profile.title || 'Film Professional',
-                userId: userSlug
-              });
+              const exists = searchResults.some(result => result.title.toLowerCase() === profile.name.toLowerCase());
+              if (!exists) {
+                searchResults.push({
+                  type: 'user',
+                  id: profile.id || profile.user_id,
+                  title: profile.name,
+                  subtitle: `${profile.title || 'Film Professional'} • ${profile.location || 'Mumbai, India'}`,
+                  userId: userSlug
+                });
+              }
             }
           } catch (error) {
             console.error('Error parsing localStorage profile:', error);
           }
         }
 
-        // 3. Search in stored profiles (for users who have been searched before)
+        // 3. Search in stored profiles cache
         const storedProfiles = localStorage.getItem('movconnect_profiles');
         if (storedProfiles) {
           try {
@@ -104,13 +116,13 @@ export const GlobalSearchNavbar = () => {
             Object.values(profiles).forEach((profile: any) => {
               if (profile.name?.toLowerCase().includes(queryLower)) {
                 const userSlug = profile.name.toLowerCase().replace(/\s+/g, '-');
-                const exists = searchResults.some(result => result.userId === userSlug);
+                const exists = searchResults.some(result => result.title.toLowerCase() === profile.name.toLowerCase());
                 if (!exists) {
                   searchResults.push({
                     type: 'user',
                     id: profile.id || profile.user_id,
                     title: profile.name,
-                    subtitle: profile.title || 'Film Professional',
+                    subtitle: `${profile.title || 'Film Professional'} • ${profile.location || 'Mumbai, India'}`,
                     userId: userSlug
                   });
                 }
@@ -121,24 +133,23 @@ export const GlobalSearchNavbar = () => {
           }
         }
 
-        // 4. Add demo users for search completeness
-        const mockUsers = [
-          { name: 'Sarayu Kuntrapaku', role: 'Film Director', location: 'Mumbai', id: 'sarayu-kuntrapaku' },
-          { name: 'Surendra Kuntrapaku', role: 'Producer & Director', location: 'Hyderabad', id: 'surendra-kuntrapaku' },
-          { name: 'Ayaan Khan', role: 'Cinematographer', location: 'Mumbai', id: 'ayaan-khan' },
-          { name: 'Rajesh Kumar', role: 'Cinematographer', location: 'Mumbai', id: 'rajesh-kumar' },
-          { name: 'Priya Sharma', role: 'Art Director', location: 'Delhi', id: 'priya-sharma' },
-          { name: 'Vikram Singh', role: 'Film Director', location: 'Chennai', id: 'vikram-singh' },
-          { name: 'Ananya Patel', role: 'Music Composer', location: 'Mumbai', id: 'ananya-patel' },
-          { name: 'Divya Singh', role: 'Actress & Model', location: 'Mumbai', id: 'divya-singh' },
-        ];
+        // 4. Add demo/mock users if no database results found
+        if (searchResults.length === 0) {
+          const mockUsers = [
+            { name: 'Sarayu Kuntrapaku', role: 'Film Director', location: 'Mumbai', id: 'sarayu-kuntrapaku' },
+            { name: 'Surendra Kuntrapaku', role: 'Producer & Director', location: 'Hyderabad', id: 'surendra-kuntrapaku' },
+            { name: 'Ayaan Khan', role: 'Cinematographer', location: 'Mumbai', id: 'ayaan-khan' },
+            { name: 'Rajesh Kumar', role: 'Cinematographer', location: 'Mumbai', id: 'rajesh-kumar' },
+            { name: 'Priya Sharma', role: 'Art Director', location: 'Delhi', id: 'priya-sharma' },
+            { name: 'Vikram Singh', role: 'Film Director', location: 'Chennai', id: 'vikram-singh' },
+            { name: 'Ananya Patel', role: 'Music Composer', location: 'Mumbai', id: 'ananya-patel' },
+            { name: 'Divya Singh', role: 'Actress & Model', location: 'Mumbai', id: 'divya-singh' },
+          ];
 
-        mockUsers.forEach(user => {
-          if (user.name.toLowerCase().includes(queryLower) || 
-              user.role.toLowerCase().includes(queryLower) ||
-              user.location.toLowerCase().includes(queryLower)) {
-            const exists = searchResults.some(result => result.userId === user.id);
-            if (!exists) {
+          mockUsers.forEach(user => {
+            if (user.name.toLowerCase().includes(queryLower) || 
+                user.role.toLowerCase().includes(queryLower) ||
+                user.location.toLowerCase().includes(queryLower)) {
               searchResults.push({
                 type: 'user',
                 id: user.id,
@@ -147,30 +158,34 @@ export const GlobalSearchNavbar = () => {
                 userId: user.id
               });
             }
-          }
-        });
-
-        // 5. Search projects
-        const { data: projects, error: projectError } = await supabase
-          .from('projects')
-          .select('*')
-          .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
-          .eq('is_public', true)
-          .limit(3);
-
-        if (!projectError && projects) {
-          projects.forEach(project => {
-            searchResults.push({
-              type: 'project',
-              id: project.id,
-              title: project.title,
-              subtitle: project.description?.substring(0, 50) + '...' || 'Film Project',
-              tags: project.tags || []
-            });
           });
         }
 
-        console.log('Search results for:', query, searchResults);
+        // 5. Search projects
+        try {
+          const { data: projects, error: projectError } = await supabase
+            .from('projects')
+            .select('*')
+            .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
+            .eq('is_public', true)
+            .limit(3);
+
+          if (!projectError && projects) {
+            projects.forEach(project => {
+              searchResults.push({
+                type: 'project',
+                id: project.id,
+                title: project.title,
+                subtitle: project.description?.substring(0, 50) + '...' || 'Film Project',
+                tags: project.tags || []
+              });
+            });
+          }
+        } catch (error) {
+          console.error('Project search error:', error);
+        }
+
+        console.log('Final search results:', searchResults);
         setResults(searchResults.slice(0, 8));
       } catch (error) {
         console.error('Search error:', error);
@@ -180,7 +195,7 @@ export const GlobalSearchNavbar = () => {
       }
     };
 
-    const timeoutId = setTimeout(searchData, 200);
+    const timeoutId = setTimeout(searchData, 300);
     return () => clearTimeout(timeoutId);
   }, [query]);
 
@@ -213,10 +228,12 @@ export const GlobalSearchNavbar = () => {
   };
 
   const handleResultClick = (result: SearchResult) => {
+    console.log('Clicked result:', result);
     setShowResults(false);
     setQuery("");
     
     if (result.type === 'user') {
+      // Navigate to profile using the userId
       navigate(`/profile/${result.userId}`);
     } else {
       navigate(`/projects/${result.id}`);
@@ -228,7 +245,7 @@ export const GlobalSearchNavbar = () => {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
         <Input
-          placeholder="Search creators, projects..."
+          placeholder="Search people, projects..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
