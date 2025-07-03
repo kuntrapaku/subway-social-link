@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 interface SearchResult {
   type: 'user' | 'project';
@@ -15,7 +16,7 @@ interface SearchResult {
   subtitle?: string;
   avatar?: string;
   tags?: string[];
-  userId?: string;
+  userId: string;
 }
 
 export const GlobalSearchNavbar = () => {
@@ -27,6 +28,7 @@ export const GlobalSearchNavbar = () => {
   
   const searchRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Close results when clicking outside
   useEffect(() => {
@@ -40,7 +42,7 @@ export const GlobalSearchNavbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Search function that prioritizes database results
+  // Search function
   useEffect(() => {
     const searchData = async () => {
       if (!query.trim() || query.length < 1) {
@@ -59,75 +61,82 @@ export const GlobalSearchNavbar = () => {
 
         console.log('Searching for:', query);
 
-        // 1. Search in Supabase profile_builder table for ALL users
-        try {
-          const { data: profiles, error: profileError } = await supabase
-            .from('profile_builder')
-            .select('*')
-            .or(`display_name.ilike.%${query}%,bio.ilike.%${query}%`)
-            .limit(10);
-
-          console.log('Supabase profile search results:', profiles, 'Error:', profileError);
-
-          if (!profileError && profiles && profiles.length > 0) {
-            profiles.forEach(profile => {
-              const userSlug = profile.user_id; // Use user_id directly for routing
-              searchResults.push({
-                type: 'user',
-                id: profile.id,
-                title: profile.display_name || 'Film Professional',
-                subtitle: `Film Professional • Mumbai, India`,
-                userId: userSlug
-              });
-            });
-          }
-        } catch (error) {
-          console.error('Supabase search error:', error);
-        }
-
-        // 2. Search projects if no users found
-        if (searchResults.length < 5) {
+        // Only search Supabase if we have a real authenticated user (not temp user)
+        const isRealUser = user && 'email' in user && !('isTemporary' in user);
+        
+        if (isRealUser) {
           try {
-            const { data: projects, error: projectError } = await supabase
-              .from('projects')
+            // Search in Supabase profile_builder table
+            const { data: profiles, error: profileError } = await supabase
+              .from('profile_builder')
               .select('*')
-              .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
-              .eq('is_public', true)
-              .limit(3);
+              .or(`display_name.ilike.%${query}%,bio.ilike.%${query}%`)
+              .limit(10);
 
-            if (!projectError && projects) {
-              projects.forEach(project => {
-                searchResults.push({
-                  type: 'project',
-                  id: project.id,
-                  title: project.title,
-                  subtitle: project.description?.substring(0, 50) + '...' || 'Film Project',
-                  tags: project.tags || []
-                });
+            console.log('Supabase profile search results:', profiles, 'Error:', profileError);
+
+            if (!profileError && profiles && profiles.length > 0) {
+              profiles.forEach(profile => {
+                // Skip current user's profile
+                if (profile.user_id !== user.id) {
+                  searchResults.push({
+                    type: 'user',
+                    id: profile.id,
+                    title: profile.display_name || 'Film Professional',
+                    subtitle: `Film Professional • Mumbai, India`,
+                    userId: profile.user_id
+                  });
+                }
               });
             }
+
+            // Search projects if we have space
+            if (searchResults.length < 5) {
+              const { data: projects, error: projectError } = await supabase
+                .from('projects')
+                .select('*')
+                .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
+                .eq('is_public', true)
+                .limit(3);
+
+              if (!projectError && projects) {
+                projects.forEach(project => {
+                  searchResults.push({
+                    type: 'project',
+                    id: project.id,
+                    title: project.title,
+                    subtitle: project.description?.substring(0, 50) + '...' || 'Film Project',
+                    tags: project.tags || [],
+                    userId: project.id
+                  });
+                });
+              }
+            }
           } catch (error) {
-            console.error('Project search error:', error);
+            console.error('Supabase search error:', error);
           }
         }
 
-        // 3. Add mock users only if no database results
+        // Add mock users if no database results or if temp user
         if (searchResults.length === 0) {
           const mockUsers = [
             { name: 'Ayaan Khan', role: 'Cinematographer', location: 'Mumbai', id: 'ayaan-khan' },
             { name: 'Rajesh Kumar', role: 'Cinematographer', location: 'Mumbai', id: 'rajesh-kumar' },
             { name: 'Priya Sharma', role: 'Art Director', location: 'Delhi', id: 'priya-sharma' },
             { name: 'Vikram Singh', role: 'Film Director', location: 'Chennai', id: 'vikram-singh' },
+            { name: 'Aditya Kapoor', role: 'Film Director', location: 'Bangalore', id: 'aditya-kapoor' },
+            { name: 'Meera Nair', role: 'Producer', location: 'Kochi', id: 'meera-nair' },
           ];
 
-          mockUsers.forEach(user => {
-            if (user.name.toLowerCase().includes(queryLower)) {
+          mockUsers.forEach(mockUser => {
+            if (mockUser.name.toLowerCase().includes(queryLower) || 
+                mockUser.role.toLowerCase().includes(queryLower)) {
               searchResults.push({
                 type: 'user',
-                id: user.id,
-                title: user.name,
-                subtitle: `${user.role} • ${user.location}`,
-                userId: user.id
+                id: mockUser.id,
+                title: mockUser.name,
+                subtitle: `${mockUser.role} • ${mockUser.location}`,
+                userId: mockUser.id
               });
             }
           });
@@ -145,7 +154,7 @@ export const GlobalSearchNavbar = () => {
 
     const timeoutId = setTimeout(searchData, 300);
     return () => clearTimeout(timeoutId);
-  }, [query]);
+  }, [query, user]);
 
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -181,7 +190,6 @@ export const GlobalSearchNavbar = () => {
     setQuery("");
     
     if (result.type === 'user') {
-      // Navigate to profile using the userId
       navigate(`/profile/${result.userId}`);
     } else {
       navigate(`/projects/${result.id}`);

@@ -25,7 +25,7 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
     try {
       // Always check localStorage first for the most up-to-date profile
       const localProfile = localStorage.getItem('user-profile');
-      if (localProfile) {
+      if (localProfile && isCurrentUser) {
         try {
           const parsedProfile = JSON.parse(localProfile);
           console.log('Using localStorage profile:', parsedProfile);
@@ -37,8 +37,10 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
         }
       }
 
-      // If user is authenticated, try to get from Supabase
-      if (user && 'email' in user) {
+      // If user is authenticated and real (not temp), try to get from Supabase
+      const isRealUser = user && 'email' in user && !('isTemporary' in user);
+      
+      if (isRealUser) {
         try {
           const { data: supabaseProfile } = await supabase
             .from('profile_builder')
@@ -49,7 +51,7 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
           if (supabaseProfile) {
             const profileData = {
               id: supabaseProfile.id,
-              name: supabaseProfile.display_name || 'Film Professional',
+              name: supabaseProfile.display_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Film Professional',
               title: 'Film Professional',
               location: 'Mumbai, India',
               connections: 0,
@@ -71,17 +73,15 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
         }
       }
 
-      // Convert AuthUser to compatible User for profile operations
-      const compatibleUser = user ? toCompatibleUser(user) : null;
-      
-      if (compatibleUser) {
-        const profileData = await getProfile(compatibleUser);
-        setProfile(profileData);
-      } else if (user) {
-        // For temp users, create a basic profile display
+      // For temp users or when database fetch fails
+      if (user) {
+        const displayName = 'username' in user ? user.username : 
+                           'email' in user ? (user.user_metadata?.name || user.email?.split('@')[0] || 'Film Professional') :
+                           'Film Professional';
+        
         const basicProfile = {
           id: user.id,
-          name: getUserDisplayName(user),
+          name: displayName,
           title: "Film Professional",
           location: "Mumbai, India",
           connections: 0,
@@ -92,8 +92,11 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
           user_id: user.id
         };
         setProfile(basicProfile);
-        // Cache in localStorage
-        localStorage.setItem('user-profile', JSON.stringify(basicProfile));
+        
+        // Cache in localStorage for temp users too
+        if (isCurrentUser) {
+          localStorage.setItem('user-profile', JSON.stringify(basicProfile));
+        }
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -117,14 +120,16 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
     return () => {
       window.removeEventListener("profile-updated", handleProfileUpdate);
     };
-  }, [user, userId]);
+  }, [user, userId, isCurrentUser]);
 
   const handleSaveProfile = async (updatedProfile: Omit<ProfileType, 'connections' | 'joinDate' | 'id' | 'user_id'>) => {
     if (!user || !profile) return;
     
     try {
       // Update profile in Supabase if user is authenticated via Supabase
-      if ('email' in user) {
+      const isRealUser = 'email' in user && !('isTemporary' in user);
+      
+      if (isRealUser) {
         const { error } = await supabase
           .from('profile_builder')
           .upsert({
@@ -150,12 +155,6 @@ const ProfileCard = ({ isCurrentUser = false, userId }: ProfileCardProps) => {
       // Update localStorage cache immediately
       localStorage.setItem('user-profile', JSON.stringify(newProfile));
       console.log('Profile saved to localStorage:', newProfile);
-
-      // Also update using the existing profile utility
-      const compatibleUser = toCompatibleUser(user);
-      if (compatibleUser) {
-        await updateProfile(compatibleUser, updatedProfile);
-      }
 
       // Update temp user data if it's a temp user
       if ('isTemporary' in user && user.isTemporary) {

@@ -75,22 +75,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Set up Supabase auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log("Auth state changed:", event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Handle sign in event - create/update profile
+        // Handle sign in - ensure profile exists and is cached
         if (event === 'SIGNED_IN' && session?.user) {
-          console.log("User signed in, creating/updating profile");
-          await createOrUpdateProfile(session.user);
+          console.log("User signed in, ensuring profile exists");
+          // Don't await this - let it run in background
+          setTimeout(() => {
+            createOrUpdateProfile(session.user);
+          }, 0);
         }
         
         // Handle sign out event
         if (event === 'SIGNED_OUT') {
-          console.log("User signed out, redirecting to login");
+          console.log("User signed out, cleaning up");
           localStorage.removeItem('user-profile');
           localStorage.removeItem('tempUser');
+          setSession(null);
+          setUser(null);
           navigate('/login', { replace: true });
         }
         
@@ -99,7 +104,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     // Check for existing Supabase session
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
         console.error("Error getting session:", error);
       }
@@ -107,9 +112,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       
-      // Create/update profile if we have a session
+      // Ensure profile exists for existing session
       if (session?.user) {
-        await createOrUpdateProfile(session.user);
+        setTimeout(() => {
+          createOrUpdateProfile(session.user);
+        }, 0);
       }
       
       setIsLoading(false);
@@ -125,26 +132,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       console.log('Creating/updating profile for user:', user.id);
       
-      // Check if profile exists
-      const { data: existingProfile } = await supabase
+      // First, ensure the profile exists in Supabase
+      const { data: existingProfile, error: fetchError } = await supabase
         .from('profile_builder')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
+      if (fetchError) {
+        console.error('Error fetching profile:', fetchError);
+      }
+
+      const displayName = user.user_metadata?.name || 
+                         user.user_metadata?.full_name || 
+                         user.email?.split('@')[0] || 
+                         'Film Professional';
+
       const profileData = {
         user_id: user.id,
-        display_name: user.user_metadata?.name || user.email?.split('@')[0] || 'Film Professional',
-        bio: 'Welcome to MovConnect!',
+        display_name: displayName,
+        bio: existingProfile?.bio || 'Welcome to MovConnect!',
         is_published: true,
         updated_at: new Date().toISOString()
       };
 
       if (existingProfile) {
-        // Update existing profile
+        // Update existing profile, but preserve user's custom data
         const { error } = await supabase
           .from('profile_builder')
-          .update(profileData)
+          .update({
+            display_name: existingProfile.display_name || displayName,
+            updated_at: new Date().toISOString()
+          })
           .eq('user_id', user.id);
           
         if (error) {
@@ -165,25 +184,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
 
-      // Cache profile in localStorage
-      const localProfileData = {
-        id: user.id,
-        name: profileData.display_name,
-        title: 'Film Professional',
-        location: 'Mumbai, India',
-        connections: 0,
-        company: 'MovCon Studios',
-        joinDate: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-        website: '',
-        bio: profileData.bio,
-        user_id: user.id
-      };
-      
-      localStorage.setItem('user-profile', JSON.stringify(localProfileData));
-      console.log('Profile cached in localStorage:', localProfileData);
-      
-      // Trigger profile update event
-      window.dispatchEvent(new Event("profile-updated"));
+      // Always refresh and cache the latest profile data
+      const { data: latestProfile } = await supabase
+        .from('profile_builder')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (latestProfile) {
+        const localProfileData = {
+          id: latestProfile.id,
+          name: latestProfile.display_name || displayName,
+          title: 'Film Professional',
+          location: 'Mumbai, India',
+          connections: 0,
+          company: 'MovCon Studios',
+          joinDate: new Date(latestProfile.created_at || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          website: '',
+          bio: latestProfile.bio || 'Welcome to MovConnect!',
+          user_id: user.id
+        };
+        
+        localStorage.setItem('user-profile', JSON.stringify(localProfileData));
+        console.log('Profile cached in localStorage:', localProfileData);
+        
+        // Trigger profile update event
+        window.dispatchEvent(new Event("profile-updated"));
+      }
       
     } catch (error) {
       console.error('Error in createOrUpdateProfile:', error);

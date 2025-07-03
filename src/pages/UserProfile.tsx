@@ -43,38 +43,45 @@ const UserProfile = () => {
         
         let fetchedProfile: Profile | null = null;
         
-        // Try to find in Supabase profile_builder by user_id
-        const { data: supabaseProfile, error: supabaseError } = await supabase
-          .from('profile_builder')
-          .select('*')
-          .eq('user_id', userId)
-          .maybeSingle();
+        // Check if current user is a real authenticated user (not temp)
+        const isRealUser = user && 'email' in user && !('isTemporary' in user);
         
-        console.log('Supabase profile query result:', supabaseProfile, 'Error:', supabaseError);
-        
-        if (supabaseProfile && !supabaseError) {
-          fetchedProfile = {
-            id: supabaseProfile.id,
-            name: supabaseProfile.display_name || 'Film Professional',
-            title: 'Film Professional',
-            location: 'Mumbai, India',
-            connections: Math.floor(Math.random() * 500) + 50,
-            company: 'MovCon Studios',
-            joinDate: new Date(supabaseProfile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-            website: 'www.movconnect.com',
-            bio: supabaseProfile.bio || 'Welcome to MovConnect!',
-            user_id: supabaseProfile.user_id
-          };
-          console.log('Found profile in Supabase:', fetchedProfile);
+        if (isRealUser) {
+          // Try to find in Supabase profile_builder by user_id (for real users)
+          const { data: supabaseProfile, error: supabaseError } = await supabase
+            .from('profile_builder')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle();
+          
+          console.log('Supabase profile query result:', supabaseProfile, 'Error:', supabaseError);
+          
+          if (supabaseProfile && !supabaseError) {
+            fetchedProfile = {
+              id: supabaseProfile.id,
+              name: supabaseProfile.display_name || 'Film Professional',
+              title: 'Film Professional',
+              location: 'Mumbai, India',
+              connections: Math.floor(Math.random() * 500) + 50,
+              company: 'MovCon Studios',
+              joinDate: new Date(supabaseProfile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+              website: 'www.movconnect.com',
+              bio: supabaseProfile.bio || 'Welcome to MovConnect!',
+              user_id: supabaseProfile.user_id
+            };
+            console.log('Found profile in Supabase:', fetchedProfile);
+          }
         }
         
-        // If not found in database and looks like a slug, try mock users
-        if (!fetchedProfile && userId.includes('-')) {
+        // If not found in database, try mock users (for demo purposes)
+        if (!fetchedProfile) {
           const mockUsers = [
             { name: 'Ayaan Khan', role: 'Cinematographer', location: 'Mumbai', id: 'ayaan-khan' },
             { name: 'Rajesh Kumar', role: 'Cinematographer', location: 'Mumbai', id: 'rajesh-kumar' },
             { name: 'Priya Sharma', role: 'Art Director', location: 'Delhi', id: 'priya-sharma' },
             { name: 'Vikram Singh', role: 'Film Director', location: 'Chennai', id: 'vikram-singh' },
+            { name: 'Aditya Kapoor', role: 'Film Director', location: 'Bangalore', id: 'aditya-kapoor' },
+            { name: 'Meera Nair', role: 'Producer', location: 'Kochi', id: 'meera-nair' },
           ];
           
           const matchedUser = mockUsers.find(u => u.id === userId);
@@ -110,7 +117,7 @@ const UserProfile = () => {
     };
 
     fetchProfile();
-  }, [userId]);
+  }, [userId, user]);
 
   const handleBack = () => {
     navigate(-1);
